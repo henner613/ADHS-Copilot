@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADHS-Copilot - Dein ADHS-Assistenzsystem</title>
+    <link rel="stylesheet" href="style.css?v=11">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container collapsed-left collapsed-right">
+        
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+
+            <nav class="nav-menu">
+                <div class="nav-item">
+                    <a class="nav-link active" id="tab-dashboard" onclick="switchTab('dashboard')">
+                        <i data-lucide="layout-dashboard"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a class="nav-link" id="tab-microtasks" onclick="switchTab('microtasks')">
+                        <i data-lucide="list-checks"></i>
+                        <span>Tagesplan & Tasks</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a class="nav-link" id="tab-routines" onclick="switchTab('routines')">
+                        <i data-lucide="zap"></i>
+                        <span>Impulse</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a class="nav-link" id="tab-retro" onclick="switchTab('retro')">
+                        <i data-lucide="refresh-cw"></i>
+                        <span>Retrospektive</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="user-profile-card">
+                <div class="avatar">A</div>
+                <div class="user-info">
+                    <span class="user-name">Alex</span>
+                    <span class="user-level">Fokus-Level 4</span>
+                </div>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <!-- TOP BAR CONTROL FOR SIDEBARS -->
+            <div class="top-control-bar">
+                <button class="control-btn active" id="toggle-left-btn" onclick="toggleLeftSidebar()" title="Navigation ein-/ausblenden">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div class="top-bar-title">Alex' Cockpit</div>
+                <button class="control-btn active" id="toggle-right-btn" onclick="toggleRightSidebar()" title="ADHS-Copilot Chat ein-/ausblenden">
+                    <i data-lucide="message-square"></i>
+                </button>
+            </div>
+            
+            <!-- PANEL: DASHBOARD -->
+            <section class="panel active" id="panel-dashboard">
+                <div class="panel-header">
+                    <h1 class="panel-title">Hallo Alex!</h1>
+                    <p class="panel-description">Willkommen zurück. Schritt für Schritt durch den Tag. Welches Ziel gehen wir heute an?</p>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <!-- Status Card: Nächste Aufgabe -->
+                    <div class="card primary">
+                        <div class="card-header">
+                            <span class="card-title">
+                                <i data-lucide="arrow-right-circle"></i>
+                                Nächste Aufgabe
+                            </span>
+                            <span class="checklist-tag priority-high">Top Priorität</span>
+                        </div>
+                        <div class="dashboard-actions">
+                            <div class="action-item" onclick="switchTab('microtasks')" style="background: rgba(255, 255, 255, 0.45); border: 1px solid rgba(99, 102, 241, 0.08); margin-top: 5px; width: 100%;">
+                                <div class="action-text">
+                                    <span class="action-title" id="dashboard-priotask-title">Keine Priorität festgelegt</span>
+                                    <span class="action-subtitle">Deine wichtigste Aufgabe für heute</span>
+                                </div>
+                                <button class="action-btn start">Jetzt starten</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Card Tasks -->
+                    <div class="card success">
+                        <div class="card-header">
+                            <span class="card-title">
+                                <i data-lucide="check-circle-2"></i>
+                                Microtasks heute
+                            </span>
+                        </div>
+                        <div id="dashboard-task-progress-text" style="font-size: 2.2rem; font-weight: 800; margin-bottom: 5px;">0 / 0</div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">Zerlege deine Aufgaben in mundgerechte Stücke, um Blockaden zu vermeiden.</p>
+                    </div>
+                </div>
+                
+                <!-- Prioritized Daily Plan (collapsible) -->
+                <div class="card danger collapsed" id="dashboard-daily-plan-card">
+                    <div class="card-header clickable-header" onclick="toggleCardCollapse('dashboard-daily-plan-card')">
+                        <span class="card-title">
+                            <i data-lucide="list-ordered"></i>
+                            Dein Tagesplan (priorisiert)
+                        </span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="checklist-tag priority-high">KI-priorisiert</span>
+                            <span class="collapse-icon-wrap"><i data-lucide="chevron-up"></i></span>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">Dein ADHS-Copilot hat deine Aufgaben nach Dringlichkeit, Deadline und Energielevel sortiert.</p>
+                        <div class="daily-plan-list" id="dashboard-daily-plan-list">
+                            <!-- JS renders the prioritized daily plan here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Somatic Impulse Starters -->
+                <div class="card secondary" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(20, 16, 32, 0.5) 100%);">
+                    <div class="card-header">
+                        <span class="card-title">
+                            <i data-lucide="zap"></i>
+                            Impuls starten
+                        </span>
+                    </div>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">Wähle einen passenden Impuls, um deinen aktuellen Geisteszustand gezielt zu steuern:</p>
+                    <div class="simulation-btn-group" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" onclick="triggerQuickImpulse('freeze')" style="border-color: var(--warning); color: var(--warning); background: rgba(245, 158, 11, 0.05); font-size: 0.85rem;">
+                            <i data-lucide="zap"></i> Freeze-Breaker
+                        </button>
+                        <button class="btn btn-secondary" onclick="triggerQuickImpulse('hyperfocus')" style="border-color: var(--secondary); color: var(--secondary); background: rgba(6, 182, 212, 0.05); font-size: 0.85rem;">
+                            <i data-lucide="orbit"></i> Hyperfokus-Stopper
+                        </button>
+                        <button class="btn btn-secondary" onclick="triggerQuickImpulse('pause')" style="border-color: #8b5cf6; color: #8b5cf6; background: rgba(139, 92, 246, 0.05); font-size: 0.85rem;">
+                            <i data-lucide="coffee"></i> Achtsame Pause
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- PANEL: MICROTASKS -->
+            <section class="panel" id="panel-microtasks">
+                <div class="panel-header">
+                    <h1 class="panel-title">Tagesplan &amp; Tasks</h1>
+                    <p class="panel-description">Dein ADHS-Copilot sammelt Aufgaben aus all deinen Kanälen und strukturiert sie automatisch in einen machbaren Tagesplan.</p>
+                </div>
+
+                <!-- Add new task -->
+                <div class="card primary">
+                    <div class="card-header">
+                        <span class="card-title">
+                            <i data-lucide="plus-circle"></i>
+                            Neue Aufgabe hinzufügen
+                        </span>
+                    </div>
+                    <div class="add-task-form">
+                        <div class="input-group">
+                            <input type="text" class="main-input" id="new-task-input" placeholder="Was musst du erledigen? Z.B. Angebot an Kunde senden...">
+                            <button class="input-btn" onclick="addNewTask()">
+                                <i data-lucide="sparkles"></i>
+                                <span>Einplanen</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prioritized daily plan -->
+                <div class="card danger" id="daily-plan-card">
+                    <div class="card-header clickable-header" onclick="toggleCardCollapse('daily-plan-card')">
+                        <span class="card-title">
+                            <i data-lucide="list-ordered"></i>
+                            Dein Tagesplan (priorisiert)
+                        </span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="checklist-tag priority-high">KI-priorisiert</span>
+                            <span class="collapse-icon-wrap"><i data-lucide="chevron-up"></i></span>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">Dein ADHS-Copilot hat deine Aufgaben nach Dringlichkeit, Deadline und Energielevel sortiert.</p>
+                        <div class="daily-plan-list" id="daily-plan-list">
+                            <!-- JS renders the prioritized daily plan here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incoming tasks from sources -->
+                <div class="card secondary" id="inbox-tasks-card">
+                    <div class="card-header clickable-header" onclick="toggleCardCollapse('inbox-tasks-card')">
+                        <span class="card-title">
+                            <i data-lucide="inbox"></i>
+                            Eingehende Aufgaben
+                        </span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="checklist-tag time" id="inbox-count-badge">10 neue</span>
+                            <span class="collapse-icon-wrap"><i data-lucide="chevron-up"></i></span>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="source-filter-bar" id="source-filter-bar">
+                            <button class="source-filter-chip active" onclick="filterInbox('all', this)">Alle</button>
+                            <button class="source-filter-chip" onclick="filterInbox('email', this)"><i data-lucide="mail" style="width:14px;height:14px;"></i> E-Mail</button>
+                            <button class="source-filter-chip" onclick="filterInbox('whatsapp', this)"><i data-lucide="message-circle" style="width:14px;height:14px;"></i> WhatsApp</button>
+                            <button class="source-filter-chip" onclick="filterInbox('slack', this)"><i data-lucide="hash" style="width:14px;height:14px;"></i> Slack</button>
+                            <button class="source-filter-chip" onclick="filterInbox('manual', this)"><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Manuell</button>
+                        </div>
+                        <div class="checklist-wrapper" id="inbox-task-list">
+                            <!-- JS renders inbox tasks here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- PANEL: ROUTINES & IMPULSES -->
+            <section class="panel" id="panel-routines">
+                <div class="panel-header">
+                    <h1 class="panel-title">Impulse</h1>
+                    <p class="panel-description">Bringe Bewegung in den Tag. Nutze proaktive Impulse zur Aktivierung, Pause und Fokus-Steuerung.</p>
+                </div>
+                
+                <div class="impulse-widget freeze" id="impulse-widget">
+                    <div class="impulse-tabs">
+                        <button class="impulse-tab-btn active" id="tab-mode-freeze" onclick="setImpulseMode('freeze')">
+                            <i data-lucide="zap"></i>
+                            <span>Freeze-Breaker</span>
+                        </button>
+                        <button class="impulse-tab-btn" id="tab-mode-hyperfocus" onclick="setImpulseMode('hyperfocus')">
+                            <i data-lucide="orbit"></i>
+                            <span>Hyperfokus-Stopper</span>
+                        </button>
+                        <button class="impulse-tab-btn" id="tab-mode-pause" onclick="setImpulseMode('pause')">
+                            <i data-lucide="coffee"></i>
+                            <span>Achtsame Pause</span>
+                        </button>
+                    </div>
+
+                    <div class="impulse-mode-desc" id="impulse-mode-desc">
+                        Gegen Prokrastination und geistige Lähmung. Kurze körperliche Aktivierung für einen schnellen Dopamin-Kick.
+                    </div>
+
+                    <div class="timer-circle-container">
+                        <svg class="timer-svg">
+                            <circle class="timer-svg-circle-bg" cx="80" cy="80" r="70"></circle>
+                            <circle class="timer-svg-circle-fill" id="timer-progress" cx="80" cy="80" r="70"></circle>
+                        </svg>
+                        <div class="timer-text" id="timer-display">01:00</div>
+                    </div>
+                    
+                    <div class="impulse-prompt-wrap">
+                        <div class="impulse-prompt-text" id="impulse-prompt">Wähle einen Modus und klicke auf "Start" oder würfle eine andere Idee!</div>
+                    </div>
+                    
+                    <div class="button-group" id="impulse-control-buttons">
+                        <button class="btn btn-secondary" onclick="rollImpulse()">
+                            <i data-lucide="dices"></i> Neu würfeln
+                        </button>
+                        <button class="btn btn-primary" id="timer-control-btn" onclick="toggleTimer()">
+                            <i data-lucide="play" id="timer-btn-icon"></i> <span id="timer-btn-text">Start</span>
+                        </button>
+                    </div>
+
+                    <div class="feedback-area" id="impulse-feedback-area" style="display: none;">
+                        <h4 style="font-size: 0.9rem; margin-bottom: 12px; font-weight: 700; color: var(--text-primary);">Wie fühlst du dich nach diesem Impuls?</h4>
+                        <div class="feedback-btn-group" id="feedback-options-container">
+                            <!-- JS will load buttons here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card primary">
+                    <div class="card-header">
+                        <span class="card-title">
+                            <i data-lucide="terminal"></i> Proaktives Simulations-Cockpit
+                        </span>
+                    </div>
+                    <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 16px;">
+                        Im echten Alltag erkennt FocusFlow dein Verhalten automatisch. Simuliere hier per Knopfdruck, wie das System dich proaktiv aus einem Freeze-Zustand holt, dich bei Hyperfokus warnt oder an Pausen erinnert.
+                    </p>
+                    <div class="simulation-btn-group" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" onclick="simulateState('freeze')" style="border-color: var(--warning); color: var(--warning); background: rgba(245, 158, 11, 0.03); font-size: 0.85rem;">
+                            <i data-lucide="snowflake"></i> Freeze-Zustand simulieren
+                        </button>
+                        <button class="btn btn-secondary" onclick="simulateState('hyperfocus')" style="border-color: var(--secondary); color: var(--secondary); background: rgba(6, 182, 212, 0.03); font-size: 0.85rem;">
+                            <i data-lucide="orbit"></i> Hyperfokus simulieren
+                        </button>
+                        <button class="btn btn-secondary" onclick="simulateState('pause')" style="border-color: #8b5cf6; color: #8b5cf6; background: rgba(139, 92, 246, 0.03); font-size: 0.85rem;">
+                            <i data-lucide="coffee"></i> Pausen-Bedarf simulieren
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- PANEL: RETROSPECTIVE -->
+            <section class="panel" id="panel-retro">
+                <div class="panel-header">
+                    <h1 class="panel-title">Retrospektive</h1>
+                    <p class="panel-description">Lerne aus deinem Verhalten. Reflektiere wöchentlich, um deine Umgebung optimal an dein ADHS-Gehirn anzupassen.</p>
+                </div>
+                
+                <div class="retro-wizard">
+                    <div class="retro-progress-dots">
+                        <div class="retro-dot active" id="retro-dot-1"></div>
+                        <div class="retro-dot" id="retro-dot-2"></div>
+                        <div class="retro-dot" id="retro-dot-3"></div>
+                        <div class="retro-dot" id="retro-dot-4"></div>
+                    </div>
+                    
+                    <!-- STEP 1: Emoji mood -->
+                    <div class="retro-step active" id="retro-step-1">
+                        <span class="retro-question">Wie bewertest du deine Fokussierung diese Woche?</span>
+                        <div class="retro-emoji-selector">
+                            <button class="emoji-btn" onclick="selectRetroEmoji(1, this, 'Schlecht')">😢</button>
+                            <button class="emoji-btn" onclick="selectRetroEmoji(1, this, 'Ok')">😐</button>
+                            <button class="emoji-btn" onclick="selectRetroEmoji(1, this, 'Gut')">🙂</button>
+                            <button class="emoji-btn" onclick="selectRetroEmoji(1, this, 'Super')">😁</button>
+                            <button class="emoji-btn" onclick="selectRetroEmoji(1, this, 'Fokus-Held')">🚀</button>
+                        </div>
+                        <p id="retro-emoji-label-1" style="font-weight: 600; color: var(--secondary); min-height: 20px;"></p>
+                        <button class="btn btn-primary" onclick="nextRetroStep(2)">Weiter <i data-lucide="arrow-right"></i></button>
+                    </div>
+                    
+                    <!-- STEP 2: Free text reflection -->
+                    <div class="retro-step" id="retro-step-2">
+                        <span class="retro-question">Welches Verhalten oder welche Umgebung hat dir diese Woche am besten geholfen?</span>
+                        <textarea class="retro-input" id="retro-text-input" placeholder="Z.B. Kopfhörer mit White Noise, Microtasks direkt am Morgen, regelmäßige Pausen..."></textarea>
+                        <div class="button-group">
+                            <button class="btn btn-secondary" onclick="nextRetroStep(1)"><i data-lucide="arrow-left"></i> Zurück</button>
+                            <button class="btn btn-primary" onclick="nextRetroStep(3)">Weiter <i data-lucide="arrow-right"></i></button>
+                        </div>
+                    </div>
+                    
+                    <!-- STEP 3: Multi-select behavior -->
+                    <div class="retro-step" id="retro-step-3">
+                        <span class="retro-question">Welche Hilfsmittel möchtest du nächste Woche gezielter nutzen?</span>
+                        <div class="checklist-wrapper" style="width: 100%; max-width: 450px; text-align: left;">
+                            <label class="checklist-item" onclick="toggleRetroBehavior(this, 'Microtasking')">
+                                <div class="checkbox-custom"><i data-lucide="check"></i></div>
+                                <span class="checklist-text">Tagesstart in Microtasks zerlegen</span>
+                            </label>
+                            <label class="checklist-item" onclick="toggleRetroBehavior(this, 'Impulserinnerung')">
+                                <div class="checkbox-custom"><i data-lucide="check"></i></div>
+                                <span class="checklist-text">Körperliche Aktivierungsimpulse</span>
+                            </label>
+                            <label class="checklist-item" onclick="toggleRetroBehavior(this, 'Visual Deadlines')">
+                                <div class="checkbox-custom"><i data-lucide="check"></i></div>
+                                <span class="checklist-text">Visuelle Deadlines & Countdowns</span>
+                            </label>
+                        </div>
+                        <div class="button-group" style="margin-top: 15px;">
+                            <button class="btn btn-secondary" onclick="nextRetroStep(2)"><i data-lucide="arrow-left"></i> Zurück</button>
+                            <button class="btn btn-primary" onclick="finishRetro()">Retro abschließen <i data-lucide="check"></i></button>
+                        </div>
+                    </div>
+                    
+                    <!-- STEP 4: Success card summary -->
+                    <div class="retro-step" id="retro-step-4">
+                        <div class="retro-success-card">
+                            <div class="success-icon-wrap">
+                                <i data-lucide="award"></i>
+                            </div>
+                            <h2 class="panel-title" style="font-size: 1.6rem;">Retrospektive abgeschlossen!</h2>
+                            <p style="color: var(--text-secondary); max-width: 450px;">Klasse reflektiert. Jede bewusste Reflexion hilft deinem Gehirn, Strategien gegen die Reizüberflutung und Prokrastination aufzubauen.</p>
+                            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md); padding: 15px; width: 100%; max-width: 400px; text-align: left; margin: 10px 0;">
+                                <div style="font-size: 0.8rem; color: var(--secondary); font-weight: 700; margin-bottom: 5px;">DEIN FOKUS-TIPP FÜR NÄCHSTE WOCHE:</div>
+                                <div style="font-size: 0.9rem;" id="retro-summary-tip">Fokussiere dich auf Microtasks direkt nach dem Aufstehen.</div>
+                            </div>
+                            <button class="btn btn-primary" onclick="resetRetroWizard()">Erneut starten</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card secondary" style="margin-top: 25px;">
+                    <div class="card-header">
+                        <span class="card-title">
+                            <i data-lucide="bar-chart-3"></i> Fokus- &amp; Task-Verlauf (Letzte 6 Wochen)
+                        </span>
+                        <div class="chart-legend" style="display: flex; gap: 15px; font-size: 0.75rem; font-weight: 600;">
+                            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 12px; background: var(--secondary); border-radius: 3px; display: inline-block;"></span> Fokus-Qualität</span>
+                            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 12px; background: rgba(99, 102, 241, 0.4); border-radius: 3px; display: inline-block;"></span> Erledigte Tasks</span>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container" style="position: relative; height: 260px; margin-top: 10px;">
+                        <svg id="retro-chart" width="100%" height="100%" viewBox="0 0 600 240" preserveAspectRatio="none" style="overflow: visible;">
+                            <!-- Grid Lines -->
+                            <line x1="50" y1="40" x2="570" y2="40" stroke="rgba(0,0,0,0.04)" stroke-dasharray="4,4" />
+                            <line x1="50" y1="90" x2="570" y2="90" stroke="rgba(0,0,0,0.04)" stroke-dasharray="4,4" />
+                            <line x1="50" y1="140" x2="570" y2="140" stroke="rgba(0,0,0,0.04)" stroke-dasharray="4,4" />
+                            <line x1="50" y1="190" x2="570" y2="190" stroke="rgba(0,0,0,0.04)" stroke-dasharray="4,4" />
+                            
+                            <!-- Y-Axis Labels -->
+                            <text x="25" y="45" font-size="10" fill="var(--text-muted)" text-anchor="middle">80%</text>
+                            <text x="25" y="95" font-size="10" fill="var(--text-muted)" text-anchor="middle">60%</text>
+                            <text x="25" y="145" font-size="10" fill="var(--text-muted)" text-anchor="middle">40%</text>
+                            <text x="25" y="195" font-size="10" fill="var(--text-muted)" text-anchor="middle">20%</text>
+                            
+                            <!-- Bar Chart: Completed Tasks -->
+                            <rect x="85" y="130" width="30" height="60" rx="4" fill="rgba(99, 102, 241, 0.25)" class="chart-bar" data-val="12 erledigte Tasks" />
+                            <rect x="165" y="100" width="30" height="90" rx="4" fill="rgba(99, 102, 241, 0.25)" class="chart-bar" data-val="18 erledigte Tasks" />
+                            <rect x="245" y="115" width="30" height="75" rx="4" fill="rgba(99, 102, 241, 0.25)" class="chart-bar" data-val="15 erledigte Tasks" />
+                            <rect x="325" y="70" width="30" height="120" rx="4" fill="rgba(99, 102, 241, 0.25)" class="chart-bar" data-val="24 erledigte Tasks" />
+                            <rect x="405" y="90" width="30" height="100" rx="4" fill="rgba(99, 102, 241, 0.25)" class="chart-bar" data-val="20 erledigte Tasks" />
+                            <rect x="485" y="50" width="30" height="140" rx="4" fill="rgba(99, 102, 241, 0.25)" class="chart-bar" data-val="28 erledigte Tasks" />
+
+                            <!-- Line Chart: Focus Level (cyan line) -->
+                            <defs>
+                                <linearGradient id="chart-area-grad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="var(--secondary)" stop-opacity="0.2"/>
+                                    <stop offset="100%" stop-color="var(--secondary)" stop-opacity="0.0"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M 100 152.5 L 180 115 L 260 127.5 L 340 77.5 L 420 95 L 500 60 L 500 190 L 100 190 Z" fill="url(#chart-area-grad)" />
+                            <path d="M 100 152.5 L 180 115 L 260 127.5 L 340 77.5 L 420 95 L 500 60" fill="none" stroke="var(--secondary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                            
+                            <!-- Dots for Line Chart -->
+                            <circle cx="100" cy="152.5" r="5" fill="#fff" stroke="var(--secondary)" stroke-width="2" class="chart-dot" data-val="55% Fokus-Qualität" />
+                            <circle cx="180" cy="115" r="5" fill="#fff" stroke="var(--secondary)" stroke-width="2" class="chart-dot" data-val="70% Fokus-Qualität" />
+                            <circle cx="260" cy="127.5" r="5" fill="#fff" stroke="var(--secondary)" stroke-width="2" class="chart-dot" data-val="65% Fokus-Qualität" />
+                            <circle cx="340" cy="77.5" r="5" fill="#fff" stroke="var(--secondary)" stroke-width="2" class="chart-dot" data-val="85% Fokus-Qualität" />
+                            <circle cx="420" cy="95" r="5" fill="#fff" stroke="var(--secondary)" stroke-width="2" class="chart-dot" data-val="78% Fokus-Qualität" />
+                            <circle cx="500" cy="60" r="5" fill="#fff" stroke="var(--secondary)" stroke-width="2" class="chart-dot" data-val="92% Fokus-Qualität" />
+
+                            <!-- X-Axis Labels -->
+                            <text x="100" y="215" font-size="10" fill="var(--text-muted)" text-anchor="middle">KW 18</text>
+                            <text x="180" y="215" font-size="10" fill="var(--text-muted)" text-anchor="middle">KW 19</text>
+                            <text x="260" y="215" font-size="10" fill="var(--text-muted)" text-anchor="middle">KW 20</text>
+                            <text x="340" y="215" font-size="10" fill="var(--text-muted)" text-anchor="middle">KW 21</text>
+                            <text x="420" y="215" font-size="10" fill="var(--text-muted)" text-anchor="middle">KW 22</text>
+                            <text x="500" y="215" font-size="10" fill="var(--text-muted)" text-anchor="middle">KW 23 (Aktuell)</text>
+                            
+                            <!-- Baseline -->
+                            <line x1="50" y1="190" x2="570" y2="190" stroke="rgba(0,0,0,0.1)" stroke-width="1.5" />
+                        </svg>
+                        
+                        <!-- Tooltip container -->
+                        <div id="chart-tooltip" style="position: absolute; display: none; background: rgba(15, 23, 42, 0.85); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; pointer-events: none; backdrop-filter: blur(5px); z-index: 10; font-weight: 600; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
+                    </div>
+                </div>
+            </section>
+            
+        </main>
+        
+        <!-- RIGHT SIDEBAR: AI Coach Chat -->
+        <aside class="coach-panel">
+            <div class="coach-header">
+                <div class="coach-avatar">
+                    <div class="coach-img">
+                        <i data-lucide="sparkles" style="color: #fff; width: 18px; height: 18px;"></i>
+                    </div>
+                    <div class="coach-status-dot"></div>
+                </div>
+                <div class="coach-meta">
+                    <span class="coach-name">ADHS-Copilot</span>
+                    <span class="coach-desc">Deine Fokus-Begleitung</span>
+                </div>
+            </div>
+            
+            <div class="chat-window" id="chat-messages-container">
+                <!-- Chat messages loaded dynamically -->
+                <div class="chat-message coach">
+                    <div class="message-bubble">
+                        Hallo Alex! Ich bin dein ADHS-Copilot. Ich helfe dir dabei, deinen Tag stressfrei zu strukturieren und Ablenkungen zu minimieren. 🎯
+                    </div>
+                    <span class="message-time">Gerade eben</span>
+                </div>
+                <div class="chat-message coach">
+                    <div class="message-bubble">
+                        Womit möchtest du starten? Wähle einen Vorschlag unten oder schreibe mir eine Nachricht.
+                    </div>
+                    <span class="message-time">Gerade eben</span>
+                </div>
+                
+                <!-- Typing Indicator -->
+                <div class="typing-indicator" id="chat-typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+            
+            <!-- Predefined suggestion chips -->
+            <div class="chat-suggestions" id="chat-suggestions-box">
+                <div class="suggestion-chip" onclick="handleSuggestion('Tagesstart planen')">🌅 Tagesstart planen</div>
+                <div class="suggestion-chip" onclick="handleSuggestion('Brauche einen Aktivierungsimpuls')">⚡ Schneller Impuls</div>
+                <div class="suggestion-chip" onclick="handleSuggestion('Retrospektive machen')">🔄 Retro starten</div>
+            </div>
+            
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chat-message-input" placeholder="Schreibe dem ADHS-Copilot eine Nachricht..." onkeydown="if(event.key === 'Enter') sendUserMessage()">
+                <button class="chat-send-btn" onclick="sendUserMessage()">
+                    <i data-lucide="send"></i>
+                </button>
+            </div>
+        </aside>
+        
+    </div>
+    
+    <!-- PROACTIVE OVERLAY MODAL -->
+    <div class="proactive-overlay" id="proactive-overlay" style="display: none;">
+        <div class="proactive-modal">
+            <div class="proactive-modal-header">
+                <div class="proactive-icon-wrap" id="proactive-icon-container">
+                    <i data-lucide="zap"></i>
+                </div>
+                <div class="proactive-title-wrap">
+                    <span class="proactive-badge" id="proactive-badge-text">STATUS ERKANNT</span>
+                    <h3 class="proactive-title" id="proactive-title-text">Achtung Zeitblindheit</h3>
+                </div>
+            </div>
+            <div class="proactive-modal-body">
+                <p id="proactive-body-text">Es sieht so aus, als ob du seit geraumer Zeit inaktiv bist. Wollen wir einen kurzen Impuls starten, um wieder in Schwung zu kommen?</p>
+                <div class="proactive-recommendation-card">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px;">Empfohlener Impuls:</div>
+                    <div style="font-size: 0.95rem; font-weight: 600;" id="proactive-impulse-text">Schüttle deine Hände und Beine aus!</div>
+                </div>
+            </div>
+            <div class="proactive-modal-footer">
+                <button class="btn btn-secondary" id="proactive-decline-btn" onclick="closeProactiveOverlay()">Später erinnern</button>
+                <button class="btn btn-primary" id="proactive-accept-btn">Jetzt machen <i data-lucide="arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=11"></script>
+</body>
+</html>
