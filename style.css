@@ -27,9 +27,9 @@
     --font-body: 'Plus Jakarta Sans', sans-serif;
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --border-radius-lg: 24px;
-    --border-radius-md: 16px;
-    --border-radius-sm: 10px;
+    --border-radius-lg: 8px;
+    --border-radius-md: 6px;
+    --border-radius-sm: 4px;
 }
 
 * {
@@ -399,7 +399,7 @@ body {
 
 .action-btn {
     padding: 6px 12px;
-    border-radius: 20px;
+    border-radius: 4px;
     font-size: 0.75rem;
     font-weight: 700;
     border: none;
@@ -523,7 +523,7 @@ body {
     width: 24px;
     height: 24px;
     border: 2px solid var(--text-muted);
-    border-radius: 6px;
+    border-radius: 3px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -697,7 +697,7 @@ body {
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    border-radius: 12px;
+    border-radius: 4px;
     font-size: 0.8rem;
     font-weight: 600;
     font-family: var(--font-body);
@@ -967,7 +967,7 @@ body {
 .emoji-btn {
     width: 60px;
     height: 60px;
-    border-radius: 50%;
+    border-radius: var(--border-radius-md);
     background: rgba(255, 255, 255, 0.8);
     border: 1px solid rgba(99, 102, 241, 0.1);
     font-size: 1.8rem;
@@ -1213,7 +1213,7 @@ body {
     background: rgba(99, 102, 241, 0.05);
     border: 1px solid rgba(99, 102, 241, 0.15);
     color: var(--primary);
-    border-radius: 16px;
+    border-radius: var(--border-radius-sm);
     font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
@@ -1381,7 +1381,7 @@ body {
 
 .source-filter-chip {
     padding: 6px 14px;
-    border-radius: 20px;
+    border-radius: 4px;
     font-size: 0.78rem;
     font-weight: 600;
     font-family: var(--font-body);
@@ -1418,7 +1418,7 @@ body {
     align-items: center;
     gap: 4px;
     padding: 3px 8px;
-    border-radius: 10px;
+    border-radius: 3px;
     font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -1729,7 +1729,7 @@ body {
 .control-btn {
     width: 36px;
     height: 36px;
-    border-radius: 50%;
+    border-radius: var(--border-radius-sm);
     background: #fff;
     border: 1px solid rgba(99, 102, 241, 0.1);
     color: var(--text-secondary);
@@ -1848,7 +1848,7 @@ body {
 .proactive-icon-wrap {
     width: 56px;
     height: 56px;
-    border-radius: 16px;
+    border-radius: var(--border-radius-md);
     display: flex;
     justify-content: center;
     align-items: center;
