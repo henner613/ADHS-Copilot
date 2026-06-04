@@ -6,6 +6,22 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDashboardStats();
     setupChartTooltips();
 
+    // File upload handler
+    const fileInput = document.querySelector('.upload-btn input[type="file"]');
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                playSound('success');
+                showTypingIndicator(true);
+                setTimeout(() => {
+                    showTypingIndicator(false);
+                    addCoachMessage('Ich habe deine Datei "' + fileName + '" empfangen und analysiert. Soll ich eine Aufgabe daraus erstellen?');
+                }, 1000);
+            }
+        });
+    }
+
     // Initial typing notification from ADHS-Copilot
     setTimeout(() => {
         showTypingIndicator(true);
@@ -312,14 +328,6 @@ const IMPULSES_HYPERFOCUS = [
     "Nimm eine aufrechte Haltung ein und mache 3 bewusste, langsame Schulterkreise nach hinten."
 ];
 
-const IMPULSES_PAUSE = [
-    "Mache eine 5-minütige Gehpause ohne digitale Ablenkung. Geh ein paar Schritte im Raum oder Flur.",
-    "Lüfte deinen Raum: Öffne alle Fenster weit für 2 Minuten und atme die frische Luft ein.",
-    "Trinke ein großes Glas Wasser in langsamen Schlucken und dehne sanft deinen Nacken.",
-    "Setze dich bequem hin und atme nach der 4-7-8 Methode (4s ein, 7s halten, 8s aus).",
-    "Mache eine kurze Dehnübung für deinen unteren Rücken (z.B. im Stehen vorbeugen).",
-    "Schließe die Augen, lehne dich zurück und lausche einfach für 3 Minuten der Stille."
-];
 
 // ========== MICROTASK GENERATOR (KEYWORDS) ==========
 function generateMicrotasksForTitle(title) {
@@ -428,7 +436,6 @@ function renderInboxTasks(filter) {
                 '<span class="inbox-task-title">' + task.title + '</span>' +
                 '<div class="task-metadata-row">' +
                     '<span class="metadata-item priority ' + task.priority + '"><i data-lucide="flag" style="width:12px;height:12px;"></i> ' + priorityLabel[task.priority] + '</span>' +
-                    '<span class="metadata-item"><i data-lucide="clock" style="width:12px;height:12px;"></i> ' + task.duration + '</span>' +
                     '<span class="metadata-item"><i data-lucide="calendar" style="width:12px;height:12px;"></i> ' + task.deadline + '</span>' +
                     '<span class="metadata-item"><i data-lucide="send" style="width:12px;height:12px;"></i> ' + src.label + ' (' + task.sender + ' &middot; ' + task.time + ')</span>' +
                 '</div>' +
@@ -444,21 +451,25 @@ function renderInboxTasks(filter) {
             const subContainer = document.createElement('div');
             subContainer.className = 'microtask-sublist-container' + (task.decomposed ? ' expanded' : '');
             
-            task.microtasks.forEach((sub, subIdx) => {
+            const nextSubIdx = task.microtasks.findIndex(sub => !sub.completed);
+            if (nextSubIdx !== -1) {
+                const sub = task.microtasks[nextSubIdx];
+                const kpi = (nextSubIdx + 1) + '/' + task.microtasks.length;
+                
                 const subItem = document.createElement('div');
                 subItem.className = 'microtask-subitem' + (sub.completed ? ' completed' : '');
                 subItem.onclick = (e) => {
                     e.stopPropagation();
-                    toggleSubtask(task.id, subIdx);
+                    toggleSubtask(task.id, nextSubIdx);
                 };
 
                 subItem.innerHTML =
                     '<div class="checkbox-custom sub-check"><i data-lucide="check" style="width: 10px; height: 10px;"></i></div>' +
-                    '<span class="checklist-text">' + sub.title + '</span>' +
-                    '<span class="checklist-tag time">' + sub.duration + '</span>';
+                    '<span class="checklist-text" style="font-weight: 600;">' + sub.title + '</span>' +
+                    '<span class="checklist-tag time" style="margin-left: auto; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0;">' + kpi + '</span>';
 
                 subContainer.appendChild(subItem);
-            });
+            }
 
             group.appendChild(subContainer);
         }
@@ -582,8 +593,9 @@ function renderDailyPlan() {
         });
 
     const priorityLabel = { high: 'Dringend', medium: 'Mittel', low: 'Niedrig' };
+    const topFiveTasks = planTasks.slice(0, 5);
 
-    planTasks.forEach((task, idx) => {
+    topFiveTasks.forEach((task, idx) => {
         const rank = idx + 1;
         const isTop = rank === 1 && !task.completed;
         const src = SOURCE_CONFIG[task.source] || SOURCE_CONFIG.manual;
@@ -608,7 +620,6 @@ function renderDailyPlan() {
                     '<span class="plan-task-title">' + task.title + '</span>' +
                     '<div class="task-metadata-row">' +
                         '<span class="metadata-item priority ' + task.priority + '"><i data-lucide="flag" style="width:12px;height:12px;"></i> ' + priorityLabel[task.priority] + '</span>' +
-                        '<span class="metadata-item"><i data-lucide="clock" style="width:12px;height:12px;"></i> ' + task.duration + '</span>' +
                         '<span class="metadata-item"><i data-lucide="calendar" style="width:12px;height:12px;"></i> ' + task.deadline + '</span>' +
                         '<span class="metadata-item"><i data-lucide="send" style="width:12px;height:12px;"></i> via ' + src.label + '</span>' +
                     '</div>' +
@@ -626,21 +637,25 @@ function renderDailyPlan() {
                 const subContainer = document.createElement('div');
                 subContainer.className = 'microtask-sublist-container' + (task.decomposed ? ' expanded' : '');
                 
-                task.microtasks.forEach((sub, subIdx) => {
+                const nextSubIdx = task.microtasks.findIndex(sub => !sub.completed);
+                if (nextSubIdx !== -1) {
+                    const sub = task.microtasks[nextSubIdx];
+                    const kpi = (nextSubIdx + 1) + '/' + task.microtasks.length;
+                    
                     const subItem = document.createElement('div');
                     subItem.className = 'microtask-subitem' + (sub.completed ? ' completed' : '');
                     subItem.onclick = (e) => {
                         e.stopPropagation();
-                        toggleSubtask(task.id, subIdx);
+                        toggleSubtask(task.id, nextSubIdx);
                     };
 
                     subItem.innerHTML =
                         '<div class="checkbox-custom sub-check"><i data-lucide="check" style="width:10px;height:10px;"></i></div>' +
-                        '<span class="checklist-text">' + sub.title + '</span>' +
-                        '<span class="checklist-tag time">' + sub.duration + '</span>';
+                        '<span class="checklist-text" style="font-weight: 600;">' + sub.title + '</span>' +
+                        '<span class="checklist-tag time" style="margin-left: auto; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0;">' + kpi + '</span>';
 
                     subContainer.appendChild(subItem);
-                });
+                }
 
                 group.appendChild(subContainer);
             }
@@ -651,11 +666,175 @@ function renderDailyPlan() {
 
     const topTask = planTasks.find(t => !t.completed);
     const dashPrio = document.getElementById('dashboard-priotask-title');
+    const tasksPrio = document.getElementById('tasks-priotask-title');
+    const decompBtn = document.getElementById('tasks-priotask-decompose-btn');
+    const subContainer = document.getElementById('tasks-priotask-subtasks');
+
     if (dashPrio) {
         dashPrio.innerText = topTask ? topTask.title : 'Alle Aufgaben erledigt!';
     }
 
+    if (tasksPrio) {
+        tasksPrio.innerText = topTask ? topTask.title : 'Alle Aufgaben erledigt!';
+    }
+
+    if (decompBtn) {
+        if (topTask) {
+            decompBtn.style.display = 'inline-flex';
+            decompBtn.onclick = (e) => {
+                toggleDecomposition(topTask.id, e);
+            };
+            if (topTask.decomposed) {
+                decompBtn.classList.add('active');
+            } else {
+                decompBtn.classList.remove('active');
+            }
+        } else {
+            decompBtn.style.display = 'none';
+        }
+    }
+
+    if (subContainer) {
+        subContainer.innerHTML = '';
+        if (topTask && topTask.decomposed && topTask.microtasks && topTask.microtasks.length > 0) {
+            const nextSubIdx = topTask.microtasks.findIndex(sub => !sub.completed);
+            if (nextSubIdx !== -1) {
+                subContainer.classList.add('expanded');
+                const sub = topTask.microtasks[nextSubIdx];
+                const kpi = (nextSubIdx + 1) + '/' + topTask.microtasks.length;
+                const subItem = document.createElement('div');
+                subItem.className = 'microtask-subitem' + (sub.completed ? ' completed' : '');
+                subItem.style.background = '#fff';
+                subItem.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleSubtask(topTask.id, nextSubIdx);
+                };
+                subItem.innerHTML =
+                    '<div class="checkbox-custom sub-check"><i data-lucide="check" style="width:10px;height:10px;"></i></div>' +
+                    '<div style="display: flex; flex-direction: column; gap: 2px; text-align: left; width: 100%; min-width: 0; flex-grow: 1;">' +
+                        '<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">' +
+                            '<span style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Nächster konkreter Teilschritt</span>' +
+                            '<span class="checklist-tag time" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0;">' + kpi + '</span>' +
+                        '</div>' +
+                        '<span class="checklist-text" style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">' + sub.title + '</span>' +
+                    '</div>';
+                subContainer.appendChild(subItem);
+            } else {
+                subContainer.classList.remove('expanded');
+            }
+        } else {
+            subContainer.classList.remove('expanded');
+        }
+    }
+
+    renderFocusTask();
+
     lucide.createIcons();
+}
+
+function renderFocusTask() {
+    const card = document.getElementById('focus-task-card');
+    if (!card) return;
+
+    // Find the next incomplete task in the prioritized daily plan
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    const planTasks = inboxTasks
+        .filter(t => t.inPlan && !t.completed)
+        .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+    const focusTask = planTasks[0];
+
+    const parentTitle = document.getElementById('focus-parent-title');
+    const mainTitle = document.getElementById('focus-main-title');
+    const microtaskBlock = document.getElementById('focus-microtask-block');
+    const microtaskTitle = document.getElementById('focus-microtask-title');
+    const microtaskCheckbox = document.getElementById('focus-microtask-checkbox');
+    const completeBtn = document.getElementById('focus-complete-btn');
+    const decomposeBtn = document.getElementById('focus-decompose-btn');
+    const badge = document.getElementById('focus-priority-badge');
+
+    if (!focusTask) {
+        // No task left!
+        if (parentTitle) parentTitle.style.display = 'none';
+        if (mainTitle) mainTitle.innerText = 'Alle Aufgaben für heute erledigt! 🎉';
+        if (microtaskBlock) microtaskBlock.style.display = 'none';
+        if (completeBtn) completeBtn.style.display = 'none';
+        if (decomposeBtn) decomposeBtn.style.display = 'none';
+        if (badge) badge.style.display = 'none';
+        return;
+    }
+
+    // Task exists
+    if (completeBtn) completeBtn.style.display = 'inline-flex';
+    if (badge) {
+        badge.style.display = 'inline-block';
+        const priorityLabel = { high: 'Dringend', medium: 'Mittel', low: 'Niedrig' };
+        badge.innerText = priorityLabel[focusTask.priority];
+        badge.className = 'checklist-tag priority-' + focusTask.priority;
+    }
+
+    // Set title
+    if (mainTitle) mainTitle.innerText = focusTask.title;
+
+    if (focusTask.decomposed && focusTask.microtasks && focusTask.microtasks.length > 0) {
+        // Find next incomplete microtask
+        const nextSubIdx = focusTask.microtasks.findIndex(sub => !sub.completed);
+        
+        if (nextSubIdx !== -1) {
+            const sub = focusTask.microtasks[nextSubIdx];
+            if (parentTitle) {
+                parentTitle.style.display = 'block';
+                parentTitle.innerText = 'Übergeordnete Aufgabe:';
+            }
+            if (microtaskBlock) microtaskBlock.style.display = 'flex';
+            if (microtaskTitle) microtaskTitle.innerText = sub.title;
+            if (decomposeBtn) decomposeBtn.style.display = 'none';
+
+            // Connect subtask completion to checkbox and button
+            if (microtaskCheckbox) {
+                microtaskCheckbox.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleSubtask(focusTask.id, nextSubIdx);
+                };
+            }
+
+            if (completeBtn) {
+                completeBtn.onclick = () => {
+                    toggleSubtask(focusTask.id, nextSubIdx);
+                };
+            }
+        } else {
+            // Decomposed, but all subtasks are complete (should toggle parent completion)
+            if (parentTitle) parentTitle.style.display = 'none';
+            if (microtaskBlock) microtaskBlock.style.display = 'none';
+            if (decomposeBtn) decomposeBtn.style.display = 'none';
+
+            if (completeBtn) {
+                completeBtn.onclick = () => {
+                    toggleInboxTask(focusTask.id);
+                };
+            }
+        }
+    } else {
+        // Not decomposed
+        if (parentTitle) parentTitle.style.display = 'none';
+        if (microtaskBlock) microtaskBlock.style.display = 'none';
+        
+        // Show Decompose button to let them break it down easily
+        if (decomposeBtn) {
+            decomposeBtn.style.display = 'inline-flex';
+            decomposeBtn.onclick = (e) => {
+                toggleDecomposition(focusTask.id, e);
+            };
+        }
+
+        // Complete button completes the whole task
+        if (completeBtn) {
+            completeBtn.onclick = () => {
+                toggleInboxTask(focusTask.id);
+            };
+        }
+    }
 }
 
 // ========== ADD NEW TASK ==========
@@ -761,7 +940,7 @@ function setImpulseMode(mode) {
     // Update class on widget container for styling
     const widget = document.getElementById('impulse-widget');
     if (widget) {
-        widget.classList.remove('freeze', 'hyperfocus', 'pause');
+        widget.classList.remove('freeze', 'hyperfocus');
         widget.classList.add(mode);
     }
 
@@ -778,12 +957,7 @@ function setImpulseMode(mode) {
         desc = 'Sanfter Übergang aus dem Tunnel. Hilft dir, rechtzeitig aufzuhören und den Kopf für Neues frei zu bekommen.';
         duration = 120; // 2 min
         initialPrompt = 'Fokus-Tunnel behutsam abbauen: Bereite den Ausstieg vor und klicke auf "Start".';
-    } else if (mode === 'pause') {
-        desc = 'Kognitive Batterien aufladen. Schützt vor Erschöpfung und sorgt für nachhaltige Leistungsfähigkeit.';
-        duration = 300; // 5 min
-        initialPrompt = 'Regelmäßige Pausen sind Pflicht. Nimm dir diese Zeit für dich. Klicke auf "Start".';
     }
-
     state.maxTimerSeconds = duration;
     state.timerSecondsLeft = duration;
     state.currentImpulse = '';
@@ -799,7 +973,6 @@ function rollImpulse() {
     let mode = state.currentImpulseMode || 'freeze';
     let list = IMPULSES_FREEZE;
     if (mode === 'hyperfocus') list = IMPULSES_HYPERFOCUS;
-    else if (mode === 'pause') list = IMPULSES_PAUSE;
 
     let newImpulse = list[Math.floor(Math.random() * list.length)];
     while (newImpulse === state.currentImpulse && list.length > 1) {
@@ -816,7 +989,6 @@ function rollImpulse() {
         showTypingIndicator(false);
         let modeLabel = 'Aktivierung (Freeze-Breaker)';
         if (mode === 'hyperfocus') modeLabel = 'Ausstieg (Hyperfokus-Stopper)';
-        else if (mode === 'pause') modeLabel = 'Pause (Achtsame Pause)';
         
         addCoachMessage('Impuls für ' + modeLabel + ' gewürfelt: "' + state.currentImpulse + '" – Starte den Timer und zieh es durch!');
     }, 1000);
@@ -836,7 +1008,6 @@ function startTimer() {
         let mode = state.currentImpulseMode || 'freeze';
         let list = IMPULSES_FREEZE;
         if (mode === 'hyperfocus') list = IMPULSES_HYPERFOCUS;
-        else if (mode === 'pause') list = IMPULSES_PAUSE;
         state.currentImpulse = list[Math.floor(Math.random() * list.length)];
         document.getElementById('impulse-prompt').innerText = state.currentImpulse;
     }
@@ -899,7 +1070,7 @@ function updateTimerDisplay() {
     const progressFill = document.getElementById('timer-progress');
     if (progressFill) {
         const max = state.maxTimerSeconds || 60;
-        const offset = 440 - (440 * (max - state.timerSecondsLeft) / max);
+        const offset = 327 - (327 * (max - state.timerSecondsLeft) / max);
         progressFill.style.strokeDashoffset = offset;
     }
 }
@@ -930,10 +1101,6 @@ function showImpulseFeedback() {
         optionsContainer.innerHTML = 
             '<button class="feedback-btn primary-action" onclick="handleImpulseFeedback(\'transitioned\')">Übergang geschafft! 🎯</button>' +
             '<button class="feedback-btn secondary-action" onclick="handleImpulseFeedback(\'still_in_tunnel\')">Immer noch im Tunnel 🌀</button>';
-    } else if (mode === 'pause') {
-        optionsContainer.innerHTML = 
-            '<button class="feedback-btn primary-action" onclick="handleImpulseFeedback(\'recharged\')">Erholt & bereit! ☕</button>' +
-            '<button class="feedback-btn secondary-action" onclick="handleImpulseFeedback(\'need_more_pause\')">Brauche mehr Pause 🛑</button>';
     }
 }
 
@@ -952,8 +1119,6 @@ function handleImpulseFeedback(feedbackType) {
         promptText = 'Lass uns deinen Freeze-Zustand brechen! Klicke auf "Start" oder würfle eine andere Idee.';
     } else if (state.currentImpulseMode === 'hyperfocus') {
         promptText = 'Fokus-Tunnel behutsam abbauen: Bereite den Ausstieg vor und klicke auf "Start".';
-    } else if (state.currentImpulseMode === 'pause') {
-        promptText = 'Regelmäßige Pausen sind Pflicht. Nimm dir diese Zeit für dich. Klicke auf "Start".';
     }
     document.getElementById('impulse-prompt').innerText = promptText;
 
@@ -973,10 +1138,6 @@ function handleImpulseFeedback(feedbackType) {
             coachMsg = 'Klasse! Den Hyperfokus bewusst zu beenden und die Aufgabe loszulassen ist eine echte Superkraft. Nimm dir kurz 2 Minuten ohne Bildschirm, bevor du etwas Neues startest.';
         } else if (feedbackType === 'still_in_tunnel') {
             coachMsg = 'Ich verstehe. Der Tunnel zieht verdammt stark. Versuche, dir einen physischen Wecker am anderen Ende des Raums zu stellen oder lüfte das Zimmer komplett durch, um den Zustand zu unterbrechen.';
-        } else if (feedbackType === 'recharged') {
-            coachMsg = 'Perfekt! Kurze Erholungsinseln sind der Treibstoff für dein ADHS-Gehirn. Du hast deinen Akku geladen und bist bereit!';
-        } else if (feedbackType === 'need_more_pause') {
-            coachMsg = 'Gib deinem Gehirn ruhig noch etwas Zeit. Setze den Timer auf eine weitere Pause oder mach ein paar Dehnübungen. Erholung ist produktiv!';
         }
         addCoachMessage(coachMsg);
         
@@ -1016,14 +1177,7 @@ function simulateState(mode) {
         bodyText = 'Du arbeitest seit über 90 Minuten durchgehend an deiner Präsentation. Um einen Erschöpfungs-Crash am Nachmittag zu verhindern, solltest du den Tunnel jetzt für 2 Minuten kontrolliert abbauen!';
         iconHTML = '<i data-lucide="orbit"></i>';
         list = IMPULSES_HYPERFOCUS;
-    } else if (mode === 'pause') {
-        badgeText = 'Erholung fällig (Pausen-Erinnerung)';
-        titleText = 'Zeit für eine Pause! ☕';
-        bodyText = 'Du hast in den letzten Stunden 3 Aufgaben erfolgreich abgeschlossen. Es ist Zeit, deinen kognitiven Akku aufzuladen, um konzentriert zu bleiben.';
-        iconHTML = '<i data-lucide="coffee"></i>';
-        list = IMPULSES_PAUSE;
     }
-
     const impulseText = list[Math.floor(Math.random() * list.length)];
 
     document.getElementById('proactive-badge-text').innerText = badgeText;
