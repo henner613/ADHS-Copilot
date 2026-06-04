@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADHS-Copilot - Dein ADHS-Assistenzsystem</title>
-    <link rel="stylesheet" href="style.css?v=24">
+    <link rel="stylesheet" href="style.css?v=27">
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -65,10 +65,10 @@
             <!-- PANEL: DASHBOARD -->
             <section class="panel active" id="panel-dashboard">
                 <div class="panel-header">
-                    <h1 class="panel-title" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; width: fit-content;">Hallo Alex!</h1>
+                    <h1 class="panel-title" style="color: var(--text-primary); font-weight: 800; font-size: 1.8rem; margin-bottom: 4px;">Hallo Alex!</h1>
                 </div>
                 
-                <div class="top-stats-bar" style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(90deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.55) 100%); border: 1px solid rgba(99, 102, 241, 0.12); padding: 12px 18px; border-radius: var(--border-radius-md); margin-bottom: 16px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.02);">
+                <div class="top-stats-bar" style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; border: 1px solid rgba(99, 102, 241, 0.08); padding: 12px 18px; border-radius: var(--border-radius-md); margin-bottom: 16px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.02);">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <i data-lucide="check-circle-2" style="color: var(--success); width: 16px; height: 16px;"></i>
                         <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary);">Microtasks heute:</span>
@@ -80,7 +80,7 @@
                 </div>
 
                 <!-- Box: Nächste Aufgabe (top prio) -->
-                <div class="card primary" onclick="switchTab('microtasks')" style="min-height: 120px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.15); margin-bottom: 16px; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.03);">
+                <div class="card primary" onclick="switchTab('microtasks')" style="min-height: 120px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; background: #ffffff; border: 1px solid rgba(94, 92, 230, 0.12); border-left: 4px solid var(--primary); margin-bottom: 16px; box-shadow: 0 4px 15px rgba(94, 92, 230, 0.03);">
                     <div>
                         <div class="card-header" style="margin-bottom: 10px;">
                             <span class="card-title" style="color: var(--primary);">
@@ -99,7 +99,7 @@
                 </div>
 
                 <!-- Somatic Impulse Starters -->
-                <div class="card secondary" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%); border: 1px solid rgba(6, 182, 212, 0.15); box-shadow: 0 4px 20px rgba(6, 182, 212, 0.03);">
+                <div class="card secondary" style="background: #ffffff; border: 1px solid rgba(99, 102, 241, 0.08); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.015);">
                     <div class="card-header">
                         <span class="card-title" style="color: var(--secondary);">
                             <i data-lucide="zap"></i>
@@ -108,10 +108,10 @@
                     </div>
                     <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">Wähle einen passenden Impuls, um deinen aktuellen Geisteszustand gezielt zu steuern:</p>
                     <div class="simulation-btn-group" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                        <button class="btn btn-secondary" onclick="triggerQuickImpulse('freeze')" style="border-color: rgba(245, 158, 11, 0.25); color: #d97706; background: #fff; font-size: 0.85rem; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.04);">
+                        <button class="btn btn-secondary" onclick="triggerQuickImpulse('freeze')" style="border-color: rgba(245, 158, 11, 0.15); color: #d97706; background: #fef7eb; font-size: 0.85rem; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.02);">
                             <i data-lucide="zap"></i> Freeze-Breaker
                         </button>
-                        <button class="btn btn-secondary" onclick="triggerQuickImpulse('hyperfocus')" style="border-color: rgba(6, 182, 212, 0.25); color: var(--secondary); background: #fff; font-size: 0.85rem; box-shadow: 0 2px 6px rgba(6, 182, 212, 0.04);">
+                        <button class="btn btn-secondary" onclick="triggerQuickImpulse('hyperfocus')" style="border-color: rgba(6, 182, 212, 0.15); color: var(--secondary); background: #e6f8fa; font-size: 0.85rem; box-shadow: 0 2px 6px rgba(6, 182, 212, 0.02);">
                             <i data-lucide="orbit"></i> Hyperfokus-Stopper
                         </button>
 
@@ -165,7 +165,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="action-item" style="background: rgba(255, 255, 255, 0.45); border: 1px solid rgba(99, 102, 241, 0.08); width: 100%;">
+                            <div class="action-item" style="background: #ffffff; border: 1px solid rgba(99, 102, 241, 0.08); width: 100%;">
                                 <div class="action-text" style="width: 100%;">
                                     <span class="action-title" id="tasks-priotask-title" style="font-size: 1rem; font-weight: 800; color: var(--text-primary);">Keine Priorität festgelegt</span>
                                     <span class="action-subtitle">Deine wichtigste Aufgabe für heute</span>
@@ -244,10 +244,10 @@
                         </p>
                     </div>
                     <div class="simulation-btn-group" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                        <button class="btn btn-secondary" onclick="simulateState('freeze')" style="border-color: var(--warning); color: var(--warning); background: rgba(245, 158, 11, 0.03); font-size: 0.85rem; padding: 10px 16px;">
+                        <button class="btn btn-secondary" onclick="simulateState('freeze')" style="border-color: rgba(245, 158, 11, 0.15); color: #d97706; background: #fef7eb; font-size: 0.85rem; padding: 10px 16px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.02);">
                             <i data-lucide="snowflake"></i> Freeze-Zustand simulieren
                         </button>
-                        <button class="btn btn-secondary" onclick="simulateState('hyperfocus')" style="border-color: var(--secondary); color: var(--secondary); background: rgba(6, 182, 212, 0.03); font-size: 0.85rem; padding: 10px 16px;">
+                        <button class="btn btn-secondary" onclick="simulateState('hyperfocus')" style="border-color: rgba(6, 182, 212, 0.15); color: var(--secondary); background: #e6f8fa; font-size: 0.85rem; padding: 10px 16px; box-shadow: 0 2px 6px rgba(6, 182, 212, 0.02);">
                             <i data-lucide="orbit"></i> Hyperfokus simulieren
                         </button>
 
@@ -534,6 +534,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=24"></script>
+    <script src="app.js?v=27"></script>
 </body>
 </html>
