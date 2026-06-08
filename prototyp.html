@@ -1,0 +1,2353 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADHS Companion – Desktop</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --color-text-primary: #1A1A2E;
+      --color-text-secondary: #5C5C7A;
+      --color-text-tertiary: #9494B0;
+      --color-background-primary: #FFFFFF;
+      --color-background-secondary: #F7F6FE;
+      --color-background-tertiary: #EEEDFE;
+      --color-border-primary: #C0BCEC;
+      --color-border-secondary: #DDD9F7;
+      --color-border-tertiary: #E8E6FB;
+      --border-radius-sm: 6px;
+      --border-radius-md: 10px;
+      --border-radius-lg: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body,
+    #root {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--color-background-tertiary);
+      color: var(--color-text-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-border-secondary);
+      border-radius: 2px;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    .task-row:hover {
+      background: var(--color-background-secondary) !important;
+    }
+
+    .team-widget:hover {
+      background: var(--color-background-secondary) !important;
+    }
+
+    .freeze-option:hover {
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.4) translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes wave {
+
+      0%,
+      100% {
+        transform: rotate(0deg);
+      }
+
+      25% {
+        transform: rotate(-40deg);
+      }
+
+      75% {
+        transform: rotate(8deg);
+      }
+    }
+
+    @keyframes blink {
+
+      0%,
+      88%,
+      100% {
+        transform: scaleY(1);
+      }
+
+      93% {
+        transform: scaleY(0.1);
+      }
+    }
+
+    @keyframes floatBob {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-6px);
+      }
+    }
+
+    @keyframes droop {
+
+      0%,
+      100% {
+        transform: rotate(0deg) translateY(0px);
+      }
+
+      40% {
+        transform: rotate(-2deg) translateY(2px);
+      }
+
+      70% {
+        transform: rotate(1deg) translateY(1px);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js"></script>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const SCREENS = { MORNING: 0, DASHBOARD: 1, FREEZE: 2, TEAM: 3, DOUBLING: 4, REFLECTION: 5, HYPERFOCUS: 6 };
+
+    // Pre-seeded good moments from last week
+    const GOOD_MOMENTS_SEED = [
+      { id: 1, date: 'Mo, 02.06.', text: 'Sprint-Planning gemeistert – trotz wenig Schlaf', emoji: '💪', cat: 'Durchhaltevermögen' },
+      { id: 2, date: 'Di, 03.06.', text: '3 Fokusblöcke hintereinander ohne Ablenkung', emoji: '🎯', cat: 'Fokus' },
+      { id: 3, date: 'Do, 29.05.', text: 'E-Mail-Backlog von 12 auf 0 gebracht', emoji: '📬', cat: 'Aufgeräumt' },
+      { id: 4, date: 'Mi, 28.05.', text: 'Feedback-Gespräch offen und ehrlich geführt', emoji: '🤝', cat: 'Mut' },
+      { id: 5, date: 'Fr, 23.05.', text: 'Präsentation trotz Freeze-Moment souverän gehalten', emoji: '⭐', cat: 'Resilienz' },
+    ];
+
+    // Personalized morning messages based on mood × energy
+    const MORNING_MSGS = {
+      müde_niedrig: "Okay, heute läuft's sanft an. Ich pack die leichten Sachen nach vorne – kein Druck.",
+      müde_mittel: "Müde, aber mit Energie? Dein Körper weiß manchmal mehr als dein Kopf.",
+      müde_hoch: "Müde im Kopf, Energie da – interessant. Lass uns das nutzen, bevor der Tag ihn einholt.",
+      gestresst_niedrig: "Ich merke, dass es gerade eng ist. Ein Schritt, dann der nächste. Das reicht.",
+      gestresst_mittel: "Stress ist da, aber du bist hier. Das zeigt schon Stärke. Wir priorisieren gemeinsam.",
+      gestresst_hoch: "Gestresst aber fit – das ist oft deine produktivste Kombination. Lass uns das kanalisieren.",
+      okay_niedrig: "Okay + niedrig Energie – ein ruhiger, fokussierter Tag ohne Druck. Perfekt.",
+      okay_mittel: "Okay und ausgeglichen. Guter Ausgangspunkt – heute wird ein solider Tag.",
+      okay_hoch: "Okay-Stimmung, hohe Energie? Das ist oft unterschätzt. Heute kannst du richtig viel schaffen.",
+      fit_niedrig: "Fit im Kopf, Energie noch aufwärmen – starten wir mit dem Wichtigsten.",
+      fit_mittel: "Fit und mittel – genau richtig für die Präsentation. Ich bin dabei.",
+      fit_hoch: "Heute bist du in Flow-Bereitschaft! Die Präsentation zuerst – du hast das absolut.",
+    };
+
+    const TASKS = [
+      {
+        id: 1, title: 'Präsentation für Freitag', priority: 'hoch', deadline: 'Fr, 06.06.', eng: 'hoch', done: false,
+        isIncoming: false, source: 'eigene',
+        dependsOn: { id: 3, name: 'Lisa M.', init: 'LM', bg: '#F0997B', col: '#712B13', reason: 'für den Client Call am Fr.' }
+      },
+      {
+        id: 2, title: 'E-Mails aus Morning-Stand', priority: 'mittel', deadline: 'Heute', eng: 'niedrig', done: false,
+        isIncoming: false, source: 'email', dependsOn: null
+      },
+      {
+        id: 3, title: 'Sprint-Board aktualisieren', priority: 'mittel', deadline: 'Do, 05.06.', eng: 'mittel', done: false,
+        isIncoming: false, source: 'slack',
+        dependsOn: { id: 4, name: 'Tom W.', init: 'TW', bg: '#FAC775', col: '#633806', reason: 'für den Weekly-Review Do.' }
+      },
+      {
+        id: 4, title: 'Kaffeemaschine reinigen', priority: 'niedrig', deadline: 'Heute', eng: 'niedrig', done: false,
+        isIncoming: false, source: 'eigene', dependsOn: null
+      },
+      {
+        id: 5, title: 'Team-Update vorbereiten', priority: 'niedrig', deadline: 'Heute', eng: 'mittel', done: false,
+        isIncoming: false, source: 'slack', dependsOn: null
+      },
+      {
+        id: 11, title: 'Feedback-Vorlage schreiben', priority: 'niedrig', deadline: 'Mo, 09.06.', eng: 'mittel', done: false,
+        isIncoming: true, source: 'slack',
+        dependsOn: { id: 1, name: 'Sarah K.', init: 'SK', bg: '#AFA9EC', col: '#3C3489', reason: 'für die Team-Feedback-Runde' }
+      },
+      {
+        id: 12, title: '1:1 mit Sarah terminieren', priority: 'niedrig', deadline: 'Di, 10.06.', eng: 'niedrig', done: false,
+        isIncoming: true, source: 'whatsapp', dependsOn: null
+      },
+      {
+        id: 13, title: 'E-Mail: Q3 Plan freigeben', priority: 'hoch', deadline: 'Fr, 06.06.', eng: 'mittel', done: false,
+        isIncoming: true, source: 'email', dependsOn: null
+      },
+      {
+        id: 14, title: 'Slack: Feedback zu Sprint-Planung', priority: 'mittel', deadline: 'Morgen', eng: 'mittel', done: false,
+        isIncoming: true, source: 'slack', dependsOn: null
+      },
+      {
+        id: 15, title: 'WhatsApp: Treffen verschieben?', priority: 'niedrig', deadline: 'Heute', eng: 'niedrig', done: false,
+        isIncoming: true, source: 'whatsapp', dependsOn: null
+      },
+      {
+        id: 16, title: 'E-Mail: Rechnung freigeben', priority: 'mittel', deadline: 'Heute', eng: 'niedrig', done: false,
+        isIncoming: true, source: 'email', dependsOn: null
+      },
+    ];
+
+    const FRIDAY_TASKS = [
+      { id: 6, title: 'Sprint-Retrospektive vorbereiten', priority: 'hoch', deadline: 'Fr, 06.06.', eng: 'hoch', done: false, isIncoming: false, source: 'slack', dependsOn: null },
+      { id: 7, title: 'Release Notes schreiben', priority: 'mittel', deadline: 'Fr, 06.06.', eng: 'mittel', done: false, isIncoming: false, source: 'eigene', dependsOn: null },
+      { id: 8, title: 'Backlog grooming', priority: 'mittel', deadline: 'Mo, 09.06.', eng: 'mittel', done: false, isIncoming: true, source: 'slack', dependsOn: null },
+      { id: 9, title: 'Team-Update-Mail versenden', priority: 'niedrig', deadline: 'Fr, 06.06.', eng: 'niedrig', done: false, isIncoming: false, source: 'email', dependsOn: null },
+      { id: 10, title: 'Wochenreview dokumentieren', priority: 'niedrig', deadline: 'Fr, 06.06.', eng: 'niedrig', done: false, isIncoming: false, source: 'eigene', dependsOn: null },
+    ];
+
+    const TEAM = [
+      { id: 1, name: 'Sarah K.', status: 'fokus', task: 'Q3 Report', init: 'SK', dbl: true, bg: '#AFA9EC', col: '#3C3489', energy: 'mittel' },
+      { id: 2, name: 'Max B.', status: 'pause', task: '—', init: 'MB', dbl: false, bg: '#5DCAA5', col: '#085041', energy: 'niedrig' },
+      { id: 3, name: 'Lisa M.', status: 'fokus', task: 'Design Review', init: 'LM', dbl: true, bg: '#F0997B', col: '#712B13', energy: 'hoch' },
+      { id: 4, name: 'Tom W.', status: 'meeting', task: 'Client Call', init: 'TW', dbl: false, bg: '#FAC775', col: '#633806', energy: 'mittel' },
+    ];
+
+    // Thank-you messages keyed by team member id
+    const THANK_YOU_MSGS = {
+      3: "Super, hab's bekommen! Das macht den Client Call am Fr. richtig viel leichter. 🙌",
+      4: "Das Sprint-Board ist genau was ich für den Weekly-Review gebraucht habe, danke!",
+      1: "Endlich kann ich das Feedback strukturiert angehen – danke für die Vorlage!",
+    };
+
+    const MICROSTEPS = {
+      1: ['PowerPoint öffnen', 'Gliederung skizzieren', 'Erste 3 Folien anlegen', 'Inhalte einfügen', 'Finales Review & Speichern'],
+      2: ['E-Mail-Postfach öffnen', 'E-Mails überfliegen & markieren', 'Wichtigste E-Mail beantworten', 'Restliche bearbeiten', 'Postfach leeren'],
+      3: ['Board-Tool öffnen', 'Erledigte Tickets verschieben', 'Neue Tickets anlegen', 'Prioritäten setzen', 'Screenshot teilen'],
+      4: ['Kaffeemaschine öffnen', 'Kaffeesatzbehälter leeren', 'Wassertank reinigen und füllen', 'Reinigungstab einwerfen', 'Spülung starten'],
+      5: ['Wiki öffnen', 'Highlights eintragen', 'Zahlen aktualisieren', 'Entwurf prüfen', 'Info posten'],
+      6: ['Retrospektive-Board öffnen', 'Feedback sammeln', 'Schwerpunkte clustern', 'Maßnahmen definieren', 'Protokoll freigeben'],
+      7: ['Git-Log prüfen', 'Änderungen zusammenfassen', 'Dokument schreiben', 'Korrektur lesen', 'Veröffentlichen'],
+      8: ['Backlog öffnen', 'Alte Tickets bereinigen', 'Prioritäten anpassen', 'Aufwände schätzen', 'Nächsten Sprint planen'],
+      9: ['E-Mail Entwurf öffnen', 'Highlights eintragen', 'Zahlen aktualisieren', 'Empfänger prüfen', 'Senden'],
+      10: ['Notizen strukturieren', 'Action Items markieren', 'Wiki-Seite erstellen', 'Link im Slack teilen', 'Feedback einholen'],
+      11: ['Feedback-E-Mail öffnen', 'Kritikpunkte notieren', 'Lösungsvorschläge erarbeiten', 'Antwort formulieren', 'Senden'],
+      12: ['Kalender öffnen', 'Freie Slots prüfen', 'Terminvorschlag formulieren', 'Einladung versenden', 'Bestätigung abwarten'],
+      13: ['Q3-Plan lesen', 'Anmerkungen hinzufügen', 'Freigabe-Formular ausfüllen', 'E-Mail abschicken', 'Status aktualisieren'],
+      14: ['Slack-Kanal öffnen', 'Vorschläge lesen', 'Feedback formulieren', 'Absenden', 'Diskussion verfolgen'],
+      15: ['Chat öffnen', 'Kalender prüfen', 'Alternativen vorschlagen', 'Termin eintragen', 'Bestätigen'],
+      16: ['Rechnung prüfen', 'Betrag abgleichen', 'Freigabe-Button klicken', 'Bestätigung speichern', 'Info an Buchhaltung'],
+    };
+
+    const PRAISES = [
+      ['Erster Schritt ✓', 'Das Schwierigste überwunden – du hast angefangen!'],
+      ['Stark! ⭐', 'Momentum aufgebaut – läuft bei dir!'],
+      ['Halbzeit! 🎯', 'Du bist auf halbem Weg – fantastisch!'],
+      ['Fast geschafft! 💪', 'Nur noch ein Schritt – du packst das!'],
+      ['Fertig! 🎉', 'Aufgabe komplett erledigt – absolut klasse!'],
+    ];
+
+    const pStyle = {
+      hoch: { bg: '#FAECE7', tx: '#993C1D', lbl: 'Hoch' },
+      mittel: { bg: '#FAEEDA', tx: '#854F0B', lbl: 'Mittel' },
+      niedrig: { bg: '#E1F5EE', tx: '#0F6E56', lbl: 'Niedrig' },
+    };
+
+    const sStyle = {
+      fokus: { bg: '#EEEDFE', tx: '#534AB7', dot: '#7F77DD', lbl: 'Im Fokus' },
+      pause: { bg: '#FAEEDA', tx: '#854F0B', dot: '#EF9F27', lbl: 'Pause' },
+      meeting: { bg: '#E6F1FB', tx: '#185FA5', dot: '#378ADD', lbl: 'Meeting' },
+    };
+
+    // ─────────────────────────────────────────────
+    // MICROSTEP MODAL
+    // ─────────────────────────────────────────────
+    function MicrostepModal({ task, completed, onComplete, onClose }) {
+      const steps = MICROSTEPS[task.id] || [
+        'Aufgabe analysieren',
+        'Vorbereitungen treffen',
+        'Hauptteil bearbeiten',
+        'Details verfeinern',
+        'Abschließen & prüfen'
+      ];
+      const [localCompleted, setLocalCompleted] = useState(completed);
+      const [praise, setPraise] = useState(null);
+      const [showTeam, setShowTeam] = useState(false);
+
+      const doStep = (i) => {
+        if (i !== localCompleted) return;
+        const next = i + 1;
+        setLocalCompleted(next);
+        setPraise(PRAISES[i]);
+        setShowTeam(true);
+        onComplete(task.id, next);
+        setTimeout(() => setShowTeam(false), 3200);
+        setTimeout(() => setPraise(null), 3500);
+      };
+
+      // Staircase geometry
+      const SW = 60, SH = 30, count = 5;
+      const containerW = SW * count; // 300
+      const containerH = SH * count + 60; // extra room for companion on top step
+
+      const getPos = (c) => {
+        if (c === 0) return { left: -18, bottom: SH + 2 };
+        const idx = c - 1;
+        return { left: SW * idx + SW / 2 - 18, bottom: SH * c + 2 };
+      };
+      const pos = getPos(localCompleted);
+
+      return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,26,46,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, backdropFilter: 'blur(4px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+          <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '26px 24px', width: '440px', maxWidth: '94vw', border: '0.5px solid var(--color-border-secondary)', animation: 'fadeIn 0.2s ease', position: 'relative', overflow: 'hidden' }}>
+
+            {/* Team toast */}
+            {showTeam && (
+              <div style={{ position: 'absolute', top: '14px', right: '14px', background: '#EEEDFE', border: '0.5px solid #AFA9EC', borderRadius: 'var(--border-radius-md)', padding: '8px 12px', fontSize: '11px', color: '#534AB7', animation: 'fadeIn 0.2s ease', zIndex: 10, maxWidth: '180px' }}>
+                <i className="ti ti-users" style={{ fontSize: '12px', marginRight: '5px' }} />Team benachrichtigt ✓
+              </div>
+            )}
+
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <p style={{ fontSize: '10px', color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '3px' }}>Microsteps · {localCompleted}/{count}</p>
+                <h3 style={{ fontSize: '15px', fontWeight: 500, color: 'var(--color-text-primary)', lineHeight: 1.3, maxWidth: '280px' }}>{task.title}</h3>
+              </div>
+              <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-tertiary)', padding: '2px', flexShrink: 0 }}>
+                <i className="ti ti-x" style={{ fontSize: '18px' }} />
+              </button>
+            </div>
+
+            {/* Staircase */}
+            <div style={{ position: 'relative', width: `${containerW}px`, height: `${containerH}px`, margin: '0 auto 24px' }}>
+              {steps.map((_, i) => (
+                <div key={i} style={{
+                  position: 'absolute', left: `${SW * i}px`, bottom: 0,
+                  width: `${SW}px`, height: `${SH * (i + 1)}px`,
+                  background: i < localCompleted ? '#7F77DD' : 'var(--color-border-tertiary)',
+                  transition: 'background 0.4s ease',
+                  borderRadius: i === count - 1 ? '6px 6px 0 0' : '0',
+                }}>
+                  {i >= localCompleted && (
+                    <span style={{ position: 'absolute', top: '4px', left: '50%', transform: 'translateX(-50%)', fontSize: '10px', color: 'var(--color-text-tertiary)', fontWeight: 500 }}>{i + 1}</span>
+                  )}
+                  {i < localCompleted && (
+                    <i className="ti ti-check" style={{ position: 'absolute', top: '6px', left: '50%', transform: 'translateX(-50%)', fontSize: '11px', color: '#EEEDFE' }} />
+                  )}
+                </div>
+              ))}
+
+              {/* Mini companion */}
+              <div style={{
+                position: 'absolute',
+                left: `${pos.left}px`,
+                bottom: `${pos.bottom}px`,
+                transition: 'left 0.5s cubic-bezier(0.34,1.56,0.64,1), bottom 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+                animation: 'floatBob 3s ease-in-out infinite',
+                zIndex: 5,
+              }}>
+                {/* head */}
+                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#EEEDFE', border: '2px solid #AFA9EC', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ display: 'flex', gap: '7px', marginBottom: '4px' }}>
+                    {[0, 1].map(i => <div key={i} style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#3C3489', animation: 'blink 3.5s ease-in-out infinite' }} />)}
+                  </div>
+                  <div style={{ width: localCompleted > 0 ? '14px' : '12px', height: localCompleted > 0 ? '7px' : '5px', borderBottom: '2px solid #3C3489', borderRadius: '0 0 8px 8px', transition: 'all 0.3s' }} />
+                </div>
+                {/* body */}
+                <div style={{ width: '26px', height: '16px', background: '#7F77DD', borderRadius: '8px 8px 10px 10px', margin: '2px auto 0', position: 'relative', left: '5px' }}>
+                  <span style={{ position: 'absolute', top: '1px', left: '50%', transform: 'translateX(-50%)', fontSize: '7px', color: '#EEEDFE' }}>♥</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Steps list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '14px' }}>
+              {steps.map((step, i) => (
+                <button key={i} onClick={() => doStep(i)} style={{
+                  display: 'flex', alignItems: 'center', gap: '11px',
+                  padding: '11px 13px',
+                  background: i < localCompleted ? '#E1F5EE' : i === localCompleted ? '#EEEDFE' : 'var(--color-background-secondary)',
+                  border: `0.5px solid ${i < localCompleted ? '#5DCAA580' : i === localCompleted ? '#AFA9EC' : 'var(--color-border-tertiary)'}`,
+                  borderRadius: 'var(--border-radius-md)',
+                  cursor: i === localCompleted ? 'pointer' : 'default',
+                  textAlign: 'left', opacity: i > localCompleted ? 0.45 : 1,
+                  transition: 'all 0.15s',
+                }}>
+                  <div style={{ width: '21px', height: '21px', borderRadius: '50%', flexShrink: 0, background: i < localCompleted ? '#1D9E75' : i === localCompleted ? '#7F77DD' : 'transparent', border: `1.5px solid ${i < localCompleted ? '#1D9E75' : i === localCompleted ? '#7F77DD' : 'var(--color-border-secondary)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {i < localCompleted ? <i className="ti ti-check" style={{ fontSize: '11px', color: 'white' }} /> : <span style={{ fontSize: '10px', fontWeight: 500, color: i === localCompleted ? 'white' : 'var(--color-text-tertiary)' }}>{i + 1}</span>}
+                  </div>
+                  <span style={{ fontSize: '13px', color: i < localCompleted ? '#085041' : i === localCompleted ? '#3C3489' : 'var(--color-text-secondary)', fontWeight: i === localCompleted ? 500 : 400, textDecoration: i < localCompleted ? 'line-through' : 'none', flex: 1 }}>{step}</span>
+                  {i === localCompleted && <i className="ti ti-arrow-right" style={{ fontSize: '13px', color: '#7F77DD' }} />}
+                </button>
+              ))}
+            </div>
+
+            {/* Praise */}
+            {praise && (
+              <div style={{ background: '#EEEDFE', borderRadius: 'var(--border-radius-md)', padding: '11px 14px', border: '0.5px solid #AFA9EC', animation: 'fadeIn 0.2s ease', textAlign: 'center' }}>
+                <p style={{ fontSize: '14px', fontWeight: 500, color: '#3C3489', marginBottom: '2px' }}>{praise[0]}</p>
+                <p style={{ fontSize: '12px', color: '#534AB7' }}>{praise[1]}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // SIDEBAR
+    // ─────────────────────────────────────────────
+    function Sidebar({ screen, setScreen, onFreezeClick, onHyperfocusClick }) {
+      const navItems = [
+        { icon: 'ti-sun', label: 'Morgen-Check', s: SCREENS.MORNING, desc: 'Selbstregulation' },
+        { icon: 'ti-home', label: 'Dashboard', s: SCREENS.DASHBOARD, desc: 'Tagesstruktur' },
+        { icon: 'ti-users', label: 'Fokus', s: SCREENS.TEAM, desc: 'Body-Doubling & Team' },
+        { icon: 'ti-notebook', label: 'Reflexion', s: SCREENS.REFLECTION, desc: 'Wochenrückblick' },
+      ];
+      const active = s => screen === s;
+
+      return (
+        <div style={{ width: '220px', background: 'var(--color-background-primary)', borderRight: '0.5px solid var(--color-border-secondary)', display: 'flex', flexDirection: 'column', flexShrink: 0, padding: '0 12px 16px' }}>
+
+          {/* Logo */}
+          <div style={{ padding: '18px 10px 16px', borderBottom: '0.5px solid var(--color-border-tertiary)', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#7F77DD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className="ti ti-brain" style={{ fontSize: '17px', color: '#EEEDFE' }} />
+              </div>
+              <div>
+                <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>ADHS</p>
+                <p style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>Companion</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Nav */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <p style={{ fontSize: '10px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '0 10px', marginBottom: '6px' }}>
+              Navigation
+            </p>
+            {navItems.map(item => (
+              <button key={item.s} onClick={() => setScreen(item.s)} style={{ width: '100%', padding: '9px 10px', borderRadius: 'var(--border-radius-md)', background: active(item.s) ? '#EEEDFE' : 'transparent', border: active(item.s) ? '0.5px solid #AFA9EC' : '0.5px solid transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'left', transition: 'all 0.15s' }}>
+                <i className={`ti ${item.icon}`} style={{ fontSize: '16px', color: active(item.s) ? '#534AB7' : 'var(--color-text-tertiary)', flexShrink: 0 }} />
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: active(item.s) ? 500 : 400, color: active(item.s) ? '#3C3489' : 'var(--color-text-primary)', lineHeight: 1.3 }}>{item.label}</p>
+                  <p style={{ fontSize: '10px', color: active(item.s) ? '#7F77DD' : 'var(--color-text-tertiary)' }}>{item.desc}</p>
+                </div>
+              </button>
+            ))}
+
+            {/* Impulse */}
+            <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ fontSize: '10px', fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '0 10px', marginBottom: '2px' }}>Impulse</p>
+              
+              {/* Freeze-Modus */}
+              <button onClick={onFreezeClick} style={{ width: '100%', padding: '9px 10px', borderRadius: 'var(--border-radius-md)', background: '#E6F1FB', border: '0.5px solid #C5DFF8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'left', transition: 'all 0.15s' }}>
+                <i className="ti ti-snowflake" style={{ fontSize: '16px', color: '#1D6BB7', flexShrink: 0 }} />
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: '#1D6BB7', lineHeight: 1.3 }}>Freeze-Modus</p>
+                  <p style={{ fontSize: '10px', color: '#4F8ED3' }}>Achtsamkeit</p>
+                </div>
+              </button>
+
+              {/* Hyperfokus-Blocker */}
+              <button onClick={onHyperfocusClick} style={{ width: '100%', padding: '9px 10px', borderRadius: 'var(--border-radius-md)', background: '#FAEEDA', border: '0.5px solid #F0C880', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'left', transition: 'all 0.15s' }}>
+                <i className="ti ti-hand-stop" style={{ fontSize: '16px', color: '#854F0B', flexShrink: 0 }} />
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: '#854F0B', lineHeight: 1.3 }}>Hyperfokus-Blocker</p>
+                  <p style={{ fontSize: '10px', color: '#BA7517' }}>Kontrollierte Pause</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* User */}
+          <div style={{ paddingTop: '12px', borderTop: '0.5px solid var(--color-border-tertiary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px' }}>
+              <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#7F77DD', color: '#EEEDFE', fontSize: '13px', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>A</div>
+              <div>
+                <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)' }}>Alex</p>
+                <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>Produktmanager</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // HEADER
+    // ─────────────────────────────────────────────
+    function Header({ screen, energy, energyStyle, simulated, doublingActive }) {
+      const dateLabel = simulated ? 'Freitag, 05. Juni' : 'Mittwoch, 03. Juni';
+      const titles = {
+        [SCREENS.MORNING]: { title: 'Morgen-Check', sub: dateLabel },
+        [SCREENS.DASHBOARD]: { title: 'Mein Fokus', sub: dateLabel },
+        [SCREENS.TEAM]: { title: 'Fokus', sub: doublingActive ? 'Body-Doubling Session läuft' : 'Live-Status' },
+        [SCREENS.REFLECTION]: { title: 'Reflexion', sub: 'Dein Wochenrückblick' },
+      };
+      const t = titles[screen] || { title: '', sub: '' };
+
+      return (
+        <div style={{ height: '56px', padding: '0 24px', background: 'var(--color-background-primary)', borderBottom: '0.5px solid var(--color-border-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <h1 style={{ fontSize: '16px', fontWeight: 500, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>{t.title}</h1>
+            <p style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>{t.sub}</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {energy && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: 'var(--border-radius-md)', background: energyStyle[energy].bg, border: `0.5px solid ${energyStyle[energy].dot}40` }}>
+                <i className={`ti ${energyStyle[energy].icon}`} style={{ fontSize: '14px', color: energyStyle[energy].dot }} />
+                <span style={{ fontSize: '12px', fontWeight: 500, color: energyStyle[energy].tx }}>Energie: {energy}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // MORNING CHECK
+    // ─────────────────────────────────────────────
+
+    function Companion({ size = 'md', message = null, mood = 'happy', wave = true, animate = true }) {
+      const sc = { sm: 0.55, md: 1, lg: 1.35 }[size] ?? 1;
+      const px = v => `${Math.round(v * sc)}px`;
+
+      const mouths = {
+        happy: { width: px(24), height: px(12), borderBottom: `2.5px solid #3C3489`, borderRadius: `0 0 ${px(14)} ${px(14)}` },
+        focused: { width: px(22), height: px(2), borderBottom: `2.5px solid #3C3489`, borderRadius: '0' },
+        worried: { width: px(20), height: px(10), borderTop: `2.5px solid #3C3489`, borderRadius: `${px(14)} ${px(14)} 0 0` },
+        celebrating: { width: px(28), height: px(14), borderBottom: `3px solid #3C3489`, borderRadius: `0 0 ${px(16)} ${px(16)}` },
+      };
+      const mouth = mouths[mood] ?? mouths.happy;
+      const eyeScaleY = mood === 'focused' ? 0.6 : 1;
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: px(16) }}>
+
+          {/* ── Figur ── */}
+          <div style={{
+            position: 'relative', width: px(120), height: px(170), flexShrink: 0,
+            animation: animate
+              ? 'popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both, floatBob 3s ease-in-out 0.5s infinite'
+              : 'floatBob 3s ease-in-out infinite',
+          }}>
+
+            {/* Linker Arm (winkt) */}
+            <div style={{
+              position: 'absolute', left: px(4), top: px(76),
+              width: px(30), height: px(12),
+              background: '#7F77DD', borderRadius: px(6),
+              transformOrigin: 'right center',
+              animation: wave ? 'wave 1s ease-in-out 0.6s infinite' : 'none',
+            }} />
+
+            {/* Rechter Arm (ruhig) */}
+            <div style={{
+              position: 'absolute', right: px(4), top: px(80),
+              width: px(24), height: px(12),
+              background: '#7F77DD', borderRadius: px(6),
+            }} />
+
+            {/* Körper */}
+            <div style={{
+              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+              top: px(72), width: px(54), height: px(72),
+              background: '#7F77DD',
+              borderRadius: `${px(16)} ${px(16)} ${px(22)} ${px(22)}`,
+            }} />
+
+            {/* Herz */}
+            <div style={{
+              position: 'absolute', left: '50%', top: px(88),
+              transform: 'translateX(-50%)',
+              fontSize: px(12), color: '#EEEDFE', lineHeight: 1,
+            }}>♥</div>
+
+            {/* Kopf */}
+            <div style={{
+              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+              top: 0, width: px(66), height: px(66),
+              background: '#EEEDFE', borderRadius: '50%',
+              border: `2.5px solid #AFA9EC`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
+            }}>
+              {mood === 'celebrating' && (
+                <div style={{ position: 'absolute', top: px(-18), fontSize: px(14) }}>✨</div>
+              )}
+              <div style={{ display: 'flex', gap: px(12), marginBottom: px(6), marginTop: px(6) }}>
+                {[0, 1].map(i => (
+                  <div key={i} style={{
+                    width: px(9), height: px(9), borderRadius: '50%',
+                    background: '#3C3489',
+                    transform: `scaleY(${eyeScaleY})`,
+                    animation: 'blink 3.5s ease-in-out 1s infinite',
+                    transformOrigin: 'center',
+                  }} />
+                ))}
+              </div>
+              <div style={mouth} />
+            </div>
+
+            {/* Füße */}
+            <div style={{
+              position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+              display: 'flex', gap: px(8),
+            }}>
+              {[0, 1].map(i => (
+                <div key={i} style={{
+                  width: px(18), height: px(14),
+                  background: '#534AB7',
+                  borderRadius: `${px(6)} ${px(6)} ${px(8)} ${px(8)}`,
+                }} />
+              ))}
+            </div>
+          </div>
+
+          {/* ── Sprechblase ── */}
+          {message && (
+            <div style={{
+              background: 'var(--color-background-primary)',
+              borderRadius: 'var(--border-radius-lg)',
+              padding: `${px(16)} ${px(22)}`,
+              border: '0.5px solid var(--color-border-secondary)',
+              maxWidth: px(280), textAlign: 'center',
+              position: 'relative',
+              animation: 'fadeIn 0.4s ease 0.3s both',
+            }}>
+              <div style={{
+                position: 'absolute', top: '-9px', left: '50%', transform: 'translateX(-50%)',
+                width: 0, height: 0,
+                borderLeft: '9px solid transparent', borderRight: '9px solid transparent',
+                borderBottom: '9px solid var(--color-border-secondary)',
+              }} />
+              <div style={{
+                position: 'absolute', top: '-7px', left: '50%', transform: 'translateX(-50%)',
+                width: 0, height: 0,
+                borderLeft: '8px solid transparent', borderRight: '8px solid transparent',
+                borderBottom: '8px solid var(--color-background-primary)', zIndex: 1,
+              }} />
+              <p style={{ fontSize: px(13), color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{message}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function Morning({ mood, setMood, energy, setEnergy, setScreen }) {
+      const [showIntro, setShowIntro] = useState(true);
+      const [showPersonalized, setShowPersonalized] = useState(false);
+
+      useEffect(() => {
+        const t = setTimeout(() => setShowIntro(false), 3500);
+        return () => clearTimeout(t);
+      }, []);
+
+      const handleStart = () => {
+        if (!energy || !mood) return;
+        setShowPersonalized(true);
+        setTimeout(() => {
+          setShowPersonalized(false);
+          setScreen(SCREENS.DASHBOARD);
+        }, 3200);
+      };
+
+      const personalMsg = MORNING_MSGS[`${mood}_${energy}`] || 'Schön, dass du da bist. Ich bin heute an deiner Seite.';
+
+      if (showIntro) {
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100%', padding: '40px 24px' }}>
+            <div style={{ textAlign: 'center', animation: 'fadeIn 0.4s ease' }}>
+              <Companion
+                size="lg"
+                mood="happy"
+                wave={true}
+                animate={true}
+                message="Hey Alex! Schön, dass du da bist. Ich bin heute an deiner Seite."
+              />
+              <button
+                onClick={() => setShowIntro(false)}
+                style={{
+                  marginTop: '20px', padding: '10px 22px',
+                  background: 'transparent',
+                  border: '0.5px solid var(--color-border-secondary)',
+                  borderRadius: 'var(--border-radius-md)',
+                  fontSize: '12px', color: 'var(--color-text-tertiary)',
+                  cursor: 'pointer', animation: 'fadeIn 0.3s ease 1s both',
+                }}
+              >
+                {"Los geht's →"}
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      if (showPersonalized) {
+        const companionMood = energy === 'hoch' ? 'celebrating' : mood === 'gestresst' ? 'worried' : 'happy';
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100%', padding: '40px 24px' }}>
+            <div style={{ textAlign: 'center', animation: 'fadeIn 0.3s ease' }}>
+              <Companion size="lg" mood={companionMood} wave={energy === 'hoch'} animate={true} message={personalMsg} />
+              <p style={{ marginTop: '24px', fontSize: '12px', color: 'var(--color-text-tertiary)', animation: 'fadeIn 0.3s ease 1.5s both' }}>
+                Dashboard wird geladen…
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100%', padding: '40px 24px' }}>
+          <div style={{ width: '100%', maxWidth: '540px', animation: 'fadeIn 0.3s ease' }}>
+            <div style={{ marginBottom: '36px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500, marginBottom: '8px' }}>Mittwoch, 03. Juni</p>
+              <h2 style={{ fontSize: '34px', fontWeight: 400, color: 'var(--color-text-primary)', lineHeight: 1.2, marginBottom: '10px' }}>
+                Guten Morgen, <span style={{ color: '#534AB7' }}>Alex</span>
+              </h2>
+              <p style={{ fontSize: '15px', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>Kurzer Einchecken – dauert 30 Sekunden.</p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '20px', border: '0.5px solid var(--color-border-secondary)' }}>
+                <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px' }}>{"Wie geht's dir gerade?"}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  {[{ icon: 'ti-zzz', l: 'Müde', v: 'müde' }, { icon: 'ti-flame', l: 'Gestresst', v: 'gestresst' }, { icon: 'ti-mood-smile', l: 'Okay', v: 'okay' }, { icon: 'ti-bolt', l: 'Fit', v: 'fit' }].map(m => (
+                    <button key={m.v} onClick={() => setMood(m.v)} style={{ padding: '14px 6px', borderRadius: 'var(--border-radius-md)', border: `${mood === m.v ? '2px' : '0.5px'} solid ${mood === m.v ? '#7F77DD' : 'var(--color-border-tertiary)'}`, background: mood === m.v ? '#EEEDFE' : 'var(--color-background-secondary)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', transition: 'all 0.15s' }}>
+                      <i className={`ti ${m.icon}`} style={{ fontSize: '22px', color: mood === m.v ? '#534AB7' : 'var(--color-text-secondary)' }} />
+                      <span style={{ fontSize: '11px', color: mood === m.v ? '#534AB7' : 'var(--color-text-secondary)', fontWeight: mood === m.v ? 500 : 400 }}>{m.l}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '20px', border: '0.5px solid var(--color-border-secondary)' }}>
+                <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px' }}>Energielevel heute</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[
+                    { v: 'niedrig', l: 'Niedrig', icon: 'ti-battery-1', col: '#D85A30', bg: '#FAECE7', tc: '#993C1D' },
+                    { v: 'mittel', l: 'Mittel', icon: 'ti-battery-3', col: '#BA7517', bg: '#FAEEDA', tc: '#854F0B' },
+                    { v: 'hoch', l: 'Hoch', icon: 'ti-battery-4', col: '#0F6E56', bg: '#E1F5EE', tc: '#085041' },
+                  ].map(e => (
+                    <button key={e.v} onClick={() => setEnergy(e.v)} style={{ padding: '11px 14px', borderRadius: 'var(--border-radius-md)', border: `${energy === e.v ? '2px' : '0.5px'} solid ${energy === e.v ? e.col : 'var(--color-border-tertiary)'}`, background: energy === e.v ? e.bg : 'var(--color-background-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', transition: 'all 0.15s' }}>
+                      <i className={`ti ${e.icon}`} style={{ fontSize: '22px', color: energy === e.v ? e.col : 'var(--color-text-secondary)' }} />
+                      <span style={{ fontSize: '13px', fontWeight: energy === e.v ? 500 : 400, color: energy === e.v ? e.tc : 'var(--color-text-primary)' }}>{e.l}</span>
+                      {energy === e.v && <i className="ti ti-check" style={{ fontSize: '14px', color: e.col, marginLeft: 'auto' }} />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {energy && mood && (
+              <div style={{ background: '#EEEDFE', borderRadius: 'var(--border-radius-lg)', padding: '18px 20px', border: '0.5px solid #AFA9EC', animation: 'fadeIn 0.3s ease', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div>
+                  <p style={{ fontSize: '10px', fontWeight: 500, color: '#534AB7', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Dein Modus heute</p>
+                  <p style={{ fontSize: '18px', fontWeight: 500, color: '#3C3489', marginBottom: '4px' }}>
+                    {energy === 'niedrig' ? 'Sanfter Einstieg' : energy === 'mittel' ? 'Balanced Day' : 'Flow-Modus aktiv'}
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#534AB7', lineHeight: 1.5 }}>
+                    {energy === 'niedrig' ? 'Leichte Admin-Tasks zuerst · Puffer eingeplant' : energy === 'mittel' ? '2× 45 min Fokus-Blöcke · Mix aus Kreativ & Admin' : 'Präsentation priorisiert · Langer Fokus-Block'}
+                  </p>
+                </div>
+                <div style={{ padding: '10px 14px', background: 'rgba(83,74,183,0.1)', borderRadius: 'var(--border-radius-md)', fontSize: '11px', color: '#3C3489', textAlign: 'center', flexShrink: 0, marginLeft: '20px' }}>
+                  <i className="ti ti-users" style={{ fontSize: '14px', display: 'block', marginBottom: '4px' }} />
+                  Energie {energy}<br />ans Team gesendet
+                </div>
+              </div>
+            )}
+            <button onClick={handleStart} style={{ width: '100%', padding: '14px', background: energy && mood ? '#7F77DD' : 'var(--color-background-secondary)', color: energy && mood ? '#EEEDFE' : 'var(--color-text-tertiary)', border: 'none', borderRadius: 'var(--border-radius-lg)', fontSize: '15px', fontWeight: 500, cursor: energy && mood ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}>
+              {energy && mood ? 'Tag starten →' : 'Mood & Energie wählen'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────
+    // PLANT SVG
+    // ─────────────────────────────────────────────
+    function PlantSVG({ stage }) {
+      const renderFlower = (cx, cy, petalR, centerR, petalColor, centerColor, n = 6) => (
+        <>
+          {Array.from({ length: n }).map((_, i) => {
+            const angle = (i * 360) / n;
+            const rad = (angle * Math.PI) / 180;
+            const px = cx + Math.cos(rad) * (centerR + petalR * 0.6);
+            const py = cy + Math.sin(rad) * (centerR + petalR * 0.6);
+            return (
+              <ellipse key={i} cx={px} cy={py}
+                rx={petalR} ry={petalR * 0.52}
+                fill={petalColor}
+                transform={`rotate(${angle} ${px} ${py})`} />
+            );
+          })}
+          <circle cx={cx} cy={cy} r={centerR} fill={centerColor} />
+          <circle cx={cx - centerR * 0.25} cy={cy - centerR * 0.25} r={centerR * 0.35} fill="rgba(255,255,255,0.25)" />
+        </>
+      );
+
+      const Pot = () => (
+        <g>
+          {/* rim */}
+          <rect x="26" y="84" width="52" height="9" rx="4" fill="#C27B5A" />
+          <rect x="27" y="84" width="50" height="4" rx="3" fill="#D4936A" />
+          {/* body */}
+          <path d="M30 93 Q29 110 50 113 Q71 110 70 93 Z" fill="#D4936A" />
+          <path d="M30 93 Q29 110 50 113 Q71 110 70 93" fill="none" stroke="#C27B5A" strokeWidth="0.5" />
+          {/* body highlight */}
+          <path d="M35 95 Q34 107 42 110" stroke="rgba(255,255,255,0.18)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          {/* soil */}
+          <ellipse cx="52" cy="85" rx="24" ry="5" fill="#6B4230" />
+          <ellipse cx="45" cy="84" rx="8" ry="2" fill="#7A5040" opacity="0.55" />
+        </g>
+      );
+
+      if (stage === 'welk') {
+        return (
+          <svg viewBox="0 0 104 122" width="104" height="122" style={{ animation: 'droop 5s ease-in-out infinite' }}>
+            {/* Dry pot – darker cracked soil */}
+            <g>
+              <rect x="26" y="84" width="52" height="9" rx="4" fill="#C27B5A" />
+              <rect x="27" y="84" width="50" height="4" rx="3" fill="#D4936A" />
+              <path d="M30 93 Q29 110 50 113 Q71 110 70 93 Z" fill="#D4936A" />
+              <path d="M30 93 Q29 110 50 113 Q71 110 70 93" fill="none" stroke="#C27B5A" strokeWidth="0.5" />
+              <path d="M35 95 Q34 107 42 110" stroke="rgba(255,255,255,0.18)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+              {/* dry, cracked soil */}
+              <ellipse cx="52" cy="85" rx="24" ry="5" fill="#4A2D1E" />
+              <path d="M42 84 Q44 82 46 84" stroke="#3A2010" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+              <path d="M54 85 Q57 83 59 85" stroke="#3A2010" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+              <path d="M48 87 Q50 85 52 87" stroke="#3A2010" strokeWidth="0.7" fill="none" strokeLinecap="round" />
+            </g>
+            {/* drooping stem – leans right then curves down */}
+            <path d="M52 84 Q56 74 64 65 Q70 58 68 48" stroke="#8B6914" strokeWidth="3" fill="none" strokeLinecap="round" />
+            {/* left leaf – drooping downward, yellowed */}
+            <path d="M56 76 Q50 82 44 88 Q40 84 46 78 Z" fill="#C4A030" />
+            <path d="M56 76 Q48 83 44 88" stroke="rgba(255,255,255,0.2)" strokeWidth="0.6" fill="none" strokeLinecap="round" />
+            {/* right leaf – drooping down-right, yellowed */}
+            <path d="M62 68 Q68 73 72 80 Q68 82 63 74 Z" fill="#B89428" />
+            <path d="M62 68 Q69 73 72 80" stroke="rgba(255,255,255,0.2)" strokeWidth="0.6" fill="none" strokeLinecap="round" />
+            {/* small wilted bud at top – curled inward */}
+            <path d="M68 48 Q72 43 70 38 Q66 40 68 48 Z" fill="#C4A030" opacity="0.9" />
+            <path d="M68 48 Q64 44 65 38 Q68 39 68 48 Z" fill="#A07828" opacity="0.8" />
+            {/* tiny water-need dots */}
+            <circle cx="76" cy="30" r="2" fill="#AFA9EC" opacity="0.5" />
+            <circle cx="82" cy="25" r="1.5" fill="#AFA9EC" opacity="0.35" />
+            <circle cx="79" cy="20" r="1" fill="#AFA9EC" opacity="0.25" />
+          </svg>
+        );
+      }
+
+      if (stage === 'trieb') {
+        return (
+          <svg viewBox="0 0 104 122" width="104" height="122">
+            <Pot />
+            {/* single stem */}
+            <path d="M52 84 Q52 73 51 61" stroke="#1D9E75" strokeWidth="3" fill="none" strokeLinecap="round" />
+            {/* left leaf */}
+            <path d="M51 73 Q40 67 36 62 Q40 59 47 65 Z" fill="#2DBF85" />
+            {/* right leaf */}
+            <path d="M51 78 Q62 72 65 66 Q61 63 55 70 Z" fill="#1D9E75" />
+            {/* leaf veins */}
+            <path d="M51 73 Q43 66 36 62" stroke="rgba(255,255,255,0.3)" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+            <path d="M51 78 Q59 70 65 66" stroke="rgba(255,255,255,0.3)" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+            {/* bud */}
+            <ellipse cx="51" cy="59" rx="5" ry="6.5" fill="#5DCAA5" />
+            <ellipse cx="51" cy="56" rx="3" ry="2.5" fill="#7FD9B8" />
+          </svg>
+        );
+      }
+
+      if (stage === 'bluehend') {
+        return (
+          <svg viewBox="0 0 104 122" width="104" height="122">
+            <Pot />
+            {/* main stem */}
+            <path d="M52 84 Q53 68 52 44" stroke="#1D9E75" strokeWidth="3" fill="none" strokeLinecap="round" />
+            {/* left branch */}
+            <path d="M52 66 Q41 58 31 53" stroke="#1D9E75" strokeWidth="2" fill="none" strokeLinecap="round" />
+            {/* right branch */}
+            <path d="M52 59 Q63 52 71 47" stroke="#1D9E75" strokeWidth="2" fill="none" strokeLinecap="round" />
+            {/* main leaves */}
+            <path d="M52 74 Q38 70 33 62 Q40 58 50 68 Z" fill="#2DBF85" />
+            <path d="M52 78 Q66 73 70 64 Q62 60 54 72 Z" fill="#1D9E75" />
+            {/* branch leaves */}
+            <path d="M31 53 Q22 47 20 40 Q26 38 34 48 Z" fill="#2DBF85" />
+            <path d="M71 47 Q80 40 82 33 Q76 31 68 42 Z" fill="#1D9E75" />
+            {/* leaf veins */}
+            <path d="M52 74 Q40 67 33 62" stroke="rgba(255,255,255,0.3)" strokeWidth="0.7" fill="none" strokeLinecap="round" />
+            <path d="M52 78 Q63 71 70 64" stroke="rgba(255,255,255,0.3)" strokeWidth="0.7" fill="none" strokeLinecap="round" />
+            {/* main flower */}
+            {renderFlower(52, 42, 7, 6, '#FAD06A', '#F0A030')}
+          </svg>
+        );
+      }
+
+      // volle Blüte
+      return (
+        <svg viewBox="0 0 104 122" width="104" height="122">
+          <Pot />
+          {/* main stem */}
+          <path d="M52 84 Q53 66 52 34" stroke="#1D9E75" strokeWidth="3" fill="none" strokeLinecap="round" />
+          {/* branches */}
+          <path d="M52 72 Q38 62 26 56" stroke="#1D9E75" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+          <path d="M52 63 Q66 54 76 48" stroke="#1D9E75" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+          <path d="M52 52 Q39 44 29 40" stroke="#1D9E75" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          {/* lush main leaves */}
+          <path d="M52 76 Q36 72 29 62 Q38 57 51 70 Z" fill="#2DBF85" />
+          <path d="M52 80 Q68 75 74 64 Q64 59 53 74 Z" fill="#1D9E75" />
+          {/* branch leaves */}
+          <path d="M26 56 Q14 49 12 41 Q20 38 28 50 Z" fill="#2DBF85" />
+          <path d="M76 48 Q86 40 88 32 Q80 30 72 43 Z" fill="#1D9E75" />
+          <path d="M29 40 Q20 33 18 26 Q25 23 32 35 Z" fill="#4CAF82" />
+          {/* leaf veins */}
+          <path d="M52 76 Q38 68 29 62" stroke="rgba(255,255,255,0.28)" strokeWidth="0.7" fill="none" strokeLinecap="round" />
+          <path d="M52 80 Q65 72 74 64" stroke="rgba(255,255,255,0.28)" strokeWidth="0.7" fill="none" strokeLinecap="round" />
+          {/* center flower (large) */}
+          {renderFlower(52, 32, 8, 6.5, '#FAD06A', '#F0A030', 8)}
+          {/* left flower */}
+          {renderFlower(24, 48, 5.5, 4.5, '#B8A9F5', '#7F77DD', 6)}
+          {/* right flower */}
+          {renderFlower(78, 41, 5.5, 4.5, '#FAD06A', '#E8921E', 6)}
+          {/* sparkles */}
+          <text x="7" y="24" fontSize="10" style={{ userSelect: 'none' }}>✨</text>
+          <text x="83" y="20" fontSize="10" style={{ userSelect: 'none' }}>✨</text>
+          <text x="46" y="14" fontSize="8" style={{ userSelect: 'none' }}>✦</text>
+        </svg>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // PLANT WIDGET
+    // ─────────────────────────────────────────────
+    function PlantWidget({ completedCount, wilted }) {
+      const isWilted = wilted && completedCount < 3;
+      const stage = isWilted
+        ? 'welk'
+        : completedCount >= 5 ? 'voll' : completedCount >= 2 ? 'bluehend' : 'trieb';
+
+      const remaining = Math.max(0, 3 - completedCount);
+
+      const info = isWilted
+        ? {
+          label: 'Braucht Wasser 💧',
+          msg: 'Du hast deine Pflanze gestern nicht gegossen. Gieße sie, indem du 3 Aufgaben erledigst.',
+          badge: { bg: '#FAEEDA', tx: '#854F0B' },
+        }
+        : {
+          trieb: {
+            label: 'Junger Trieb',
+            msg: 'Erledige 2 Aufgaben – dann wächst deine Pflanze weiter.',
+            badge: { bg: '#E1F5EE', tx: '#0F6E56' },
+          },
+          bluehend: {
+            label: 'Blühende Pflanze',
+            msg: 'Du bist im Flow! Noch mehr Aufgaben und sie erblüht vollständig.',
+            badge: { bg: '#E1F5EE', tx: '#0F6E56' },
+          },
+          voll: {
+            label: 'Volle Blüte ✨',
+            msg: 'Heute alles geschafft – was für ein Tag!',
+            badge: { bg: '#EEEDFE', tx: '#534AB7' },
+          },
+        }[stage];
+
+      return (
+        <div style={{
+          background: 'var(--color-background-primary)',
+          borderRadius: 'var(--border-radius-lg)',
+          padding: '16px 18px',
+          border: isWilted ? '0.5px solid #F0C880' : '0.5px solid var(--color-border-secondary)',
+          transition: 'border-color 0.4s ease',
+        }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <i className="ti ti-plant-2" style={{ fontSize: '12px', marginRight: '5px', color: isWilted ? '#BA7517' : '#1D9E75' }} />Deine Pflanze
+            </p>
+            <span style={{
+              fontSize: '10px', padding: '2px 8px',
+              borderRadius: 'var(--border-radius-sm)',
+              background: info.badge.bg, color: info.badge.tx, fontWeight: 500,
+            }}>
+              {info.label}
+            </span>
+          </div>
+
+          {/* Plant illustration */}
+          <div key={stage} style={{ display: 'flex', justifyContent: 'center', padding: '6px 0 4px', animation: 'fadeIn 0.5s ease' }}>
+            <PlantSVG stage={stage} />
+          </div>
+
+          {/* Message */}
+          <p style={{ fontSize: '12px', color: isWilted ? '#854F0B' : 'var(--color-text-secondary)', textAlign: 'center', lineHeight: 1.5, marginBottom: '12px' }}>
+            {info.msg}
+          </p>
+
+          {/* Progress — watering mode when wilted */}
+          {isWilted ? (
+            <div style={{ background: '#FAEEDA', borderRadius: 'var(--border-radius-md)', padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                {[0, 1, 2].map(i => (
+                  <div key={i} style={{
+                    width: '28px', height: '6px', borderRadius: '3px',
+                    background: i < completedCount ? '#1D9E75' : '#F0C880',
+                    transition: 'background 0.4s ease',
+                  }} />
+                ))}
+              </div>
+              <span style={{ fontSize: '11px', color: '#854F0B', fontWeight: 500 }}>
+                {remaining > 0 ? `Noch ${remaining} Aufgabe${remaining > 1 ? 'n' : ''}` : 'Fast gerettet!'}
+              </span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} style={{
+                  flex: 1, height: '5px', borderRadius: '3px',
+                  background: i < completedCount ? '#1D9E75' : 'var(--color-border-tertiary)',
+                  transition: 'background 0.4s ease',
+                }} />
+              ))}
+              <span style={{ fontSize: '10px', color: 'var(--color-text-tertiary)', marginLeft: '5px', flexShrink: 0 }}>
+                {completedCount}/5
+              </span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const sourceInfo = {
+      email: { label: 'E-Mail', icon: 'ti-mail', color: '#185FA5', bg: '#E6F1FB' },
+      whatsapp: { label: 'WhatsApp', icon: 'ti-brand-whatsapp', color: '#0F6E56', bg: '#E1F5EE' },
+      slack: { label: 'Slack', icon: 'ti-brand-slack', color: '#6B3C89', bg: '#F6EEFB' },
+      eigene: { label: 'Eigene', icon: 'ti-user', color: '#534AB7', bg: '#EEEDFE' },
+    };
+
+    // DASHBOARD
+    // ─────────────────────────────────────────────
+    function Dashboard({
+      sorted, tasks, toggle, energy, energyStyle, setScreen, setActiveTask,
+      microstepProgress, onOpenMicrosteps, invisibleWork, simulated, onSimulate,
+      isTodayTasksExpanded, setIsTodayTasksExpanded,
+      isIncomingTasksExpanded, setIsIncomingTasksExpanded,
+      incomingFilter, setIncomingFilter, onAddTask, onStartDoubling
+    }) {
+      const [newTitle, setNewTitle] = useState('');
+      const sortedTasks = sorted();
+      const todayTasks = sortedTasks.filter(t => !t.isIncoming);
+      const incomingTasks = sortedTasks.filter(t => t.isIncoming);
+      const waitingTasks = tasks.filter(t => !t.done && t.dependsOn);
+
+      // Top focus task is the first undone today's task
+      const topTodayTask = todayTasks.find(t => !t.done);
+
+      // Remaining daily tasks list (excludes the top undone task if it exists)
+      const todayListTasks = todayTasks.filter(t => !topTodayTask || t.id !== topTodayTask.id);
+      const todayListTasksToShow = todayListTasks.slice(0, 6);
+
+      // Filtered incoming tasks list
+      const filteredIncoming = incomingTasks.filter(
+        t => incomingFilter === 'all' || t.source === incomingFilter
+      );
+
+      const done = tasks.filter(t => t.done).length;
+
+      const handleAddSubmit = (e) => {
+        e.preventDefault();
+        if (!newTitle.trim()) return;
+        onAddTask(newTitle);
+        setNewTitle('');
+      };
+
+      const renderTaskItem = (task, index, listArray) => {
+        const prog = microstepProgress[task.id] || 0;
+        const sInfo = sourceInfo[task.source] || sourceInfo.eigene;
+        const isBorder = index < listArray.length - 1;
+
+        return (
+          <div key={task.id} className="task-row" style={{ padding: '13px 22px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: isBorder ? '0.5px solid var(--color-border-tertiary)' : 'none', opacity: task.done ? 0.45 : 1, background: 'transparent', transition: 'background 0.12s' }}>
+            <div onClick={() => toggle(task.id)} style={{ width: '20px', height: '20px', borderRadius: '6px', flexShrink: 0, border: `1.5px solid ${task.done ? '#1D9E75' : 'var(--color-border-secondary)'}`, background: task.done ? '#1D9E75' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', cursor: 'pointer' }}>
+              {task.done && <i className="ti ti-check" style={{ fontSize: '12px', color: 'white' }} />}
+            </div>
+            <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => onOpenMicrosteps(task)}>
+              <p style={{ fontSize: '13px', color: 'var(--color-text-primary)', textDecoration: task.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.title}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px', flexWrap: 'wrap' }}>
+                <p style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>{task.deadline}</p>
+                {!task.isIncoming && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '9px', fontWeight: 500, color: sInfo.color, background: sInfo.bg, padding: '2px 6px', borderRadius: '4px' }}>
+                    <i className={`ti ${sInfo.icon}`} style={{ fontSize: '9px' }} />
+                    {sInfo.label}
+                  </span>
+                )}
+                {task.dependsOn && !task.done && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#854F0B', background: '#FAEEDA', padding: '2px 7px', borderRadius: 'var(--border-radius-sm)', border: '0.5px solid #F0C88060' }}>
+                    <div style={{ width: '14px', height: '14px', borderRadius: '4px', background: task.dependsOn.bg, color: task.dependsOn.col, fontSize: '7px', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{task.dependsOn.init}</div>
+                    {task.dependsOn.name.split(' ')[0]} wartet
+                  </span>
+                )}
+                {prog > 0 && !task.done && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ display: 'flex', gap: '2px' }}>
+                      {[0, 1, 2, 3, 4].map(s => <div key={s} style={{ width: '8px', height: '4px', borderRadius: '1px', background: s < prog ? '#7F77DD' : 'var(--color-border-tertiary)', transition: 'background 0.2s' }} />)}
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#534AB7' }}>{prog}/5</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexShrink: 0 }}>
+              {energy && task.eng === energy && <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#1D9E75', display: 'block' }} title="Passt zur Energie" />}
+              <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: 'var(--border-radius-sm)', background: pStyle[task.priority].bg, color: pStyle[task.priority].tx }}>{pStyle[task.priority].lbl}</span>
+              <button onClick={() => onOpenMicrosteps(task)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-tertiary)', padding: '2px', display: 'flex', alignItems: 'center' }} title="Microsteps öffnen">
+                <i className="ti ti-stairs-up" style={{ fontSize: '14px' }} />
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <div style={{ padding: '24px', display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', alignItems: 'start' }}>
+
+          {/* Left: progress + task list */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '20px 22px', border: '0.5px solid var(--color-border-secondary)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                <div>
+                  <h2 style={{ fontSize: '17px', fontWeight: 500, color: 'var(--color-text-primary)' }}>Aufgaben heute</h2>
+                  <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>{done} von {tasks.length} erledigt</p>
+                </div>
+                <span style={{ fontSize: '30px', fontWeight: 400, color: '#534AB7', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                  {Math.round((done / tasks.length) * 100)}%
+                </span>
+              </div>
+              <div style={{ height: '4px', background: 'var(--color-border-tertiary)', borderRadius: '2px' }}>
+                <div style={{ height: '100%', background: '#7F77DD', borderRadius: '2px', width: `${Math.round((done / tasks.length) * 100)}%`, transition: 'width 0.3s ease' }} />
+              </div>
+            </div>
+
+            {/* Wichtigste priorisierte Aufgabe */}
+            {topTodayTask ? (
+              <div style={{ background: '#EEEDFE', borderRadius: 'var(--border-radius-lg)', padding: '20px 22px', border: '0.5px solid #AFA9EC', animation: 'fadeIn 0.3s ease' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 500, color: '#534AB7', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <i className="ti ti-star" style={{ fontSize: '11px', marginRight: '4px' }} />Wichtigste priorisierte Aufgabe
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {energy && topTodayTask.eng === energy && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '4px', background: '#E1F5EE', color: '#0F6E56', fontWeight: 500 }}>Passt zur Energie</span>}
+                    <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: 'var(--border-radius-sm)', background: pStyle[topTodayTask.priority].bg, color: pStyle[topTodayTask.priority].tx }}>{pStyle[topTodayTask.priority].lbl}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
+                  <div onClick={() => toggle(topTodayTask.id)} style={{ width: '22px', height: '22px', borderRadius: '6px', flexShrink: 0, border: `1.5px solid ${topTodayTask.done ? '#1D9E75' : '#7F77DD'}`, background: topTodayTask.done ? '#1D9E75' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', cursor: 'pointer', marginTop: '2px' }}>
+                    {topTodayTask.done && <i className="ti ti-check" style={{ fontSize: '14px', color: 'white' }} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '16px', fontWeight: 500, color: '#3C3489', lineHeight: 1.4 }}>{topTodayTask.title}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '12px', color: '#534AB7' }}>
+                        <i className="ti ti-calendar" style={{ fontSize: '13px', verticalAlign: '-2px', marginRight: '4px' }} />{topTodayTask.deadline}
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '9px', fontWeight: 500, color: (sourceInfo[topTodayTask.source] || sourceInfo.eigene).color, background: (sourceInfo[topTodayTask.source] || sourceInfo.eigene).bg, padding: '2px 6px', borderRadius: '4px' }}>
+                        <i className={`ti ${(sourceInfo[topTodayTask.source] || sourceInfo.eigene).icon}`} style={{ fontSize: '9px' }} />
+                        {(sourceInfo[topTodayTask.source] || sourceInfo.eigene).label}
+                      </span>
+                      {topTodayTask.dependsOn && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#854F0B', background: '#FAEEDA', padding: '2px 7px', borderRadius: 'var(--border-radius-sm)', border: '0.5px solid #F0C88060' }}>
+                          <div style={{ width: '14px', height: '14px', borderRadius: '4px', background: topTodayTask.dependsOn.bg, color: topTodayTask.dependsOn.col, fontSize: '7px', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{topTodayTask.dependsOn.init}</div>
+                          {topTodayTask.dependsOn.name.split(' ')[0]} wartet
+                        </span>
+                      )}
+                      {(microstepProgress[topTodayTask.id] || 0) > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <div style={{ display: 'flex', gap: '2px' }}>
+                            {[0, 1, 2, 3, 4].map(s => <div key={s} style={{ width: '8px', height: '4px', borderRadius: '1px', background: s < (microstepProgress[topTodayTask.id] || 0) ? '#7F77DD' : '#C0BCEC', transition: 'background 0.2s' }} />)}
+                          </div>
+                          <span style={{ fontSize: '10px', color: '#534AB7' }}>{microstepProgress[topTodayTask.id]}/5</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '0.5px solid #C0BCEC50', paddingTop: '12px' }}>
+                  <button onClick={() => onOpenMicrosteps(topTodayTask)} style={{ padding: '8px 14px', background: 'white', color: '#534AB7', border: '0.5px solid #AFA9EC', borderRadius: 'var(--border-radius-md)', fontSize: '12px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <i className="ti ti-stairs-up" style={{ fontSize: '14px' }} /> Microsteps
+                  </button>
+                  <button onClick={() => onStartDoubling(topTodayTask)} style={{ padding: '8px 14px', background: '#7F77DD', color: '#EEEDFE', border: 'none', borderRadius: 'var(--border-radius-md)', fontSize: '12px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <i className="ti ti-users" style={{ fontSize: '14px' }} /> Body-Doubling
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ background: '#E1F5EE', borderRadius: 'var(--border-radius-lg)', padding: '24px', border: '0.5px solid #5DCAA580', textAlign: 'center', animation: 'fadeIn 0.3s ease' }}>
+                <i className="ti ti-circle-check" style={{ fontSize: '36px', color: '#1D9E75', marginBottom: '8px', display: 'block' }} />
+                <p style={{ fontSize: '16px', fontWeight: 500, color: '#085041', marginBottom: '4px' }}>Hervorragende Arbeit!</p>
+                <p style={{ fontSize: '13px', color: '#0F6E56' }}>Du hast alle Aufgaben für heute erledigt. Genieß deinen Tag!</p>
+              </div>
+            )}
+
+            {/* Eingebefeld für eigene Aufgaben */}
+            <form onSubmit={handleAddSubmit} style={{ display: 'flex', gap: '8px', background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '10px 14px', border: '0.5px solid var(--color-border-secondary)' }}>
+              <i className="ti ti-plus" style={{ fontSize: '16px', color: '#7F77DD', marginTop: '3px' }} />
+              <input
+                type="text"
+                placeholder="Neue eigene Aufgabe für heute hinzufügen... (Eingabetaste)"
+                value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                style={{ flex: 1, border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '13px', color: 'var(--color-text-primary)' }}
+              />
+              {newTitle.trim() && (
+                <button type="submit" style={{ background: '#EEEDFE', border: '0.5px solid #AFA9EC', color: '#534AB7', padding: '4px 10px', borderRadius: 'var(--border-radius-sm)', fontSize: '11px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}>
+                  Hinzufügen
+                </button>
+              )}
+            </form>
+
+            {/* Aufgaben des Tages collapsible */}
+            <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', border: '0.5px solid var(--color-border-secondary)', overflow: 'hidden' }}>
+              <div onClick={() => setIsTodayTasksExpanded(!isTodayTasksExpanded)} style={{ padding: '14px 22px', borderBottom: isTodayTasksExpanded ? '0.5px solid var(--color-border-tertiary)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <i className="ti ti-calendar-event" style={{ fontSize: '16px', color: '#7F77DD' }} />
+                  <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aufgaben des Tages</p>
+                  <span style={{ fontSize: '11px', background: 'var(--color-background-secondary)', color: 'var(--color-text-secondary)', padding: '2px 8px', borderRadius: '10px', fontWeight: 500 }}>
+                    {todayListTasksToShow.length}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {isTodayTasksExpanded && energy && <p style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#1D9E75', display: 'inline-block' }} /> Passend zu Energie {energy}</p>}
+                  <i className={`ti ${isTodayTasksExpanded ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ fontSize: '16px', color: 'var(--color-text-tertiary)' }} />
+                </div>
+              </div>
+              {isTodayTasksExpanded && (
+                <div style={{ animation: 'fadeIn 0.2s ease' }}>
+                  {todayListTasksToShow.length === 0 ? (
+                    <div style={{ padding: '22px', textAlign: 'center', color: 'var(--color-text-tertiary)', fontSize: '13px' }}>
+                      Keine weiteren Aufgaben für heute.
+                    </div>
+                  ) : (
+                    todayListTasksToShow.map((task, i) => renderTaskItem(task, i, todayListTasksToShow))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Eingegangene Aufgaben collapsible */}
+            <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', border: '0.5px solid var(--color-border-secondary)', overflow: 'hidden' }}>
+              <div onClick={() => setIsIncomingTasksExpanded(!isIncomingTasksExpanded)} style={{ padding: '14px 22px', borderBottom: isIncomingTasksExpanded ? '0.5px solid var(--color-border-tertiary)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <i className="ti ti-inbox" style={{ fontSize: '16px', color: '#7F77DD' }} />
+                  <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Eingegangene Aufgaben</p>
+                  <span style={{ fontSize: '11px', background: 'var(--color-background-secondary)', color: 'var(--color-text-secondary)', padding: '2px 8px', borderRadius: '10px', fontWeight: 500 }}>
+                    {filteredIncoming.length}
+                  </span>
+                </div>
+                <i className={`ti ${isIncomingTasksExpanded ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ fontSize: '16px', color: 'var(--color-text-tertiary)' }} />
+              </div>
+              {isIncomingTasksExpanded && (
+                <div style={{ animation: 'fadeIn 0.2s ease' }}>
+                  {/* Source filter bar */}
+                  <div style={{ display: 'flex', gap: '6px', padding: '12px 20px', borderBottom: '0.5px solid var(--color-border-tertiary)', background: 'var(--color-background-secondary)', flexWrap: 'wrap' }}>
+                    {[
+                      { v: 'all', l: 'Alle', icon: 'ti-list' },
+                      { v: 'email', l: 'E-Mail', icon: 'ti-mail' },
+                      { v: 'whatsapp', l: 'WhatsApp', icon: 'ti-brand-whatsapp' },
+                      { v: 'slack', l: 'Slack', icon: 'ti-brand-slack' },
+                      { v: 'eigene', l: 'Eigene', icon: 'ti-user' },
+                    ].map(f => {
+                      const isActive = incomingFilter === f.v;
+                      return (
+                        <button key={f.v} onClick={() => setIncomingFilter(f.v)} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '20px', background: isActive ? '#7F77DD' : 'var(--color-background-primary)', color: isActive ? '#EEEDFE' : 'var(--color-text-secondary)', border: isActive ? '0.5px solid #534AB7' : '0.5px solid var(--color-border-secondary)', fontSize: '11px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}>
+                          <i className={`ti ${f.icon}`} style={{ fontSize: '12px' }} />
+                          {f.l}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {filteredIncoming.length === 0 ? (
+                    <div style={{ padding: '22px', textAlign: 'center', color: 'var(--color-text-tertiary)', fontSize: '13px' }}>
+                      Keine eingegangenen Aufgaben gefunden.
+                    </div>
+                  ) : (
+                    filteredIncoming.map((task, i) => renderTaskItem(task, i, filteredIncoming))
+                  )}
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Right: widgets */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+            <div className="team-widget" onClick={() => setScreen(SCREENS.TEAM)} style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '16px 18px', border: '0.5px solid var(--color-border-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.12s' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex' }}>
+                  {TEAM.slice(0, 3).map((m, i) => (
+                    <div key={m.id} style={{ width: '28px', height: '28px', borderRadius: '50%', background: m.bg, color: m.col, fontSize: '10px', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: i > 0 ? '-8px' : '0', border: '2px solid var(--color-background-primary)' }}>{m.init}</div>
+                  ))}
+                </div>
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)' }}>Team</p>
+                  <p style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>4 Kollegen online · Workspace öffnen</p>
+                </div>
+              </div>
+              <i className="ti ti-arrow-right" style={{ fontSize: '16px', color: 'var(--color-text-tertiary)' }} />
+            </div>
+
+            {/* Waiting tasks (Jemand wartet auf dich) */}
+            {waitingTasks.length > 0 && (
+              <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '16px 18px', border: '0.5px solid var(--color-border-secondary)' }}>
+                <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                  <i className="ti ti-clock" style={{ fontSize: '12px', marginRight: '5px', color: '#BA7517' }} />Jemand wartet auf dich
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {waitingTasks.map(task => (
+                    <div key={task.id} style={{ display: 'flex', gap: '10px', padding: '10px 12px', background: '#FAEEDA', borderRadius: 'var(--border-radius-md)', border: '0.5px solid #F0C88040', alignItems: 'flex-start' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: task.dependsOn.bg, color: task.dependsOn.col, fontSize: '10px', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
+                        {task.dependsOn.init}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: '12px', fontWeight: 500, color: '#3C2A00' }}>{task.dependsOn.name}</p>
+                        <p style={{ fontSize: '11px', color: '#854F0B', lineHeight: 1.3 }}>{task.dependsOn.reason}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <PlantWidget completedCount={tasks.filter(t => t.done).length} wilted={simulated} />
+            {!simulated && (
+              <button onClick={onSimulate} style={{
+                width: '100%', padding: '10px 14px',
+                background: 'transparent',
+                border: '1px dashed var(--color-border-secondary)',
+                borderRadius: 'var(--border-radius-md)',
+                fontSize: '11px', color: 'var(--color-text-tertiary)',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+                transition: 'all 0.15s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#AFA9EC'; e.currentTarget.style.color = '#534AB7'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border-secondary)'; e.currentTarget.style.color = 'var(--color-text-tertiary)'; }}
+              >
+                <i className="ti ti-clock-2" style={{ fontSize: '13px' }} />
+                Simulation: Zwei Tage später
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // FREEZE
+    // ─────────────────────────────────────────────
+    function FreezeScreen({ bp, isExpanded, bLabels, setScreen, freezeCount }) {
+      const [showReflect, setShowReflect] = useState(false);
+
+      const empathyMsg = freezeCount >= 3
+        ? { title: `Das ${freezeCount}. Mal heute, Alex.`, sub: 'Dein System sendet ein klares Signal. Wollen wir kurz schauen, was gerade so viel kostet?', showReflect: true }
+        : freezeCount === 2
+          ? { title: 'Schon das zweite Mal heute.', sub: 'Das passiert – und du machst das Richtige, indem du innehältst. Lass uns durchatmen.', showReflect: false }
+          : { title: 'Alles gut, Alex.', sub: 'Lass uns kurz durchatmen.', showReflect: false };
+
+      return (
+        <div style={{ height: '100vh', background: '#26215C', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', position: 'relative' }}>
+          <button onClick={() => setScreen(SCREENS.DASHBOARD)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', color: '#CECBF6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="ti ti-x" style={{ fontSize: '18px' }} />
+          </button>
+
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <p style={{ fontSize: '11px', color: '#AFA9EC', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Freeze-Modus</p>
+            <h2 style={{ fontSize: '40px', fontWeight: 400, color: '#EEEDFE', lineHeight: 1.3, marginBottom: '10px' }}>{empathyMsg.title}</h2>
+            <p style={{ fontSize: '17px', color: '#AFA9EC' }}>{empathyMsg.sub}</p>
+            {empathyMsg.showReflect && !showReflect && (
+              <button onClick={() => setShowReflect(true)} style={{ marginTop: '16px', padding: '10px 20px', background: 'rgba(127,119,221,0.2)', border: '0.5px solid #7F77DD', borderRadius: 'var(--border-radius-md)', color: '#CECBF6', fontSize: '13px', cursor: 'pointer' }}>
+                <i className="ti ti-heart" style={{ fontSize: '13px', marginRight: '6px' }} />Ja, lass uns kurz reden
+              </button>
+            )}
+          </div>
+
+          {showReflect ? (
+            <div style={{ width: '100%', maxWidth: '420px', background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: 'var(--border-radius-lg)', padding: '24px', animation: 'fadeIn 0.3s ease', marginBottom: '32px' }}>
+              <p style={{ fontSize: '13px', color: '#CECBF6', lineHeight: 1.7, marginBottom: '16px' }}>
+                Mehrere Freeze-Momente hintereinander passieren oft, wenn sich zu viele Dinge gleichzeitig angestaut haben – Tasks, Erwartungen, Unterbrechungen. <br /><br />
+                Das ist keine Schwäche. Das ist dein Nervensystem, das um Pause bittet.
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['Zu viele offene Tasks', 'Zu wenig Pausen', 'Unklare Prioritäten', 'Sozialer Stress'].map(r => (
+                  <button key={r} onClick={() => setScreen(SCREENS.DASHBOARD)} style={{ padding: '7px 12px', background: 'rgba(127,119,221,0.15)', border: '0.5px solid rgba(127,119,221,0.3)', borderRadius: 'var(--border-radius-md)', color: '#AFA9EC', fontSize: '11px', cursor: 'pointer' }}>{r}</button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{ position: 'relative', width: '240px', height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px' }}>
+                <div style={{ position: 'absolute', width: isExpanded ? '230px' : '130px', height: isExpanded ? '230px' : '130px', borderRadius: '50%', background: 'rgba(127,119,221,0.08)', transition: 'all 4s ease-in-out' }} />
+                <div style={{ position: 'absolute', width: isExpanded ? '180px' : '100px', height: isExpanded ? '180px' : '100px', borderRadius: '50%', background: 'rgba(127,119,221,0.14)', transition: 'all 4s ease-in-out' }} />
+                <div style={{ width: isExpanded ? '130px' : '80px', height: isExpanded ? '130px' : '80px', borderRadius: '50%', background: '#3C3489', border: '1.5px solid #7F77DD', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 4s ease-in-out' }}>
+                  <i className={`ti ${bp === 2 ? 'ti-wind' : 'ti-leaf'}`} style={{ fontSize: isExpanded ? '44px' : '28px', color: '#EEEDFE', transition: 'all 4s ease-in-out' }} />
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+                <p style={{ fontSize: '30px', fontWeight: 400, color: '#EEEDFE', letterSpacing: '0.02em', marginBottom: '8px' }}>{bLabels[bp]}</p>
+                <p style={{ fontSize: '13px', color: '#AFA9EC' }}>4-2-6-2 Atemrhythmus</p>
+              </div>
+            </>
+          )}
+
+          <div style={{ width: '100%', maxWidth: '420px' }}>
+            <p style={{ fontSize: '10px', color: '#AFA9EC', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'center', marginBottom: '12px' }}>Was überwältigt dich?</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              {[
+                { icon: 'ti-stack-2', l: 'Zu viele Aufgaben auf einmal' },
+                { icon: 'ti-clock-x', l: 'Deadline-Druck' },
+                { icon: 'ti-brain', l: 'Kann nicht anfangen' },
+                { icon: 'ti-messages', l: 'Zu viel Kommunikation' },
+              ].map(o => (
+                <button key={o.l} className="freeze-option" onClick={() => setScreen(SCREENS.DASHBOARD)} style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 'var(--border-radius-md)', padding: '12px 14px', color: '#CECBF6', fontSize: '12px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', transition: 'background 0.15s' }}>
+                  <i className={`ti ${o.icon}`} style={{ fontSize: '16px', color: '#AFA9EC' }} />{o.l}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // HYPERFOKUS-BLOCKER SCREEN
+    // ─────────────────────────────────────────────
+    function HyperfocusScreen({ tasks, setScreen }) {
+      const [timer, setTimer] = useState(120); // 2 minutes
+      const [active, setActive] = useState(true); // Auto-start the timer!
+
+      useEffect(() => {
+        let t;
+        if (active && timer > 0) {
+          t = setInterval(() => setTimer(v => v - 1), 1000);
+        }
+        return () => clearInterval(t);
+      }, [active, timer]);
+
+      const fmt = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+      // Filter for today's tasks (Aufgaben des Tages)
+      const todayTasks = tasks.filter(t => !t.isIncoming);
+
+      return (
+        <div style={{ height: '100vh', background: '#1B1822', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', position: 'relative', overflow: 'hidden' }}>
+          <button onClick={() => setScreen(SCREENS.DASHBOARD)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', color: '#E1DDEC', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}>
+            <i className="ti ti-x" style={{ fontSize: '18px' }} />
+          </button>
+
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <p style={{ fontSize: '11px', color: '#B4A9C8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Hyperfokus-Blocker</p>
+            <h2 style={{ fontSize: '32px', fontWeight: 400, color: '#F3EEFB', lineHeight: 1.3, marginBottom: '10px' }}>Zeit für einen System-Check.</h2>
+            <p style={{ fontSize: '15px', color: '#B4A9C8', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+              Du arbeitest seit drei Stunden ohne Pause hochkonzentriert – großartig! Aber lass uns kurz prüfen, ob dein Körper auch noch versorgt ist.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '32px', width: '100%', maxWidth: '960px', alignItems: 'stretch', maxHeight: '55vh' }}>
+            {/* Left Column: Recommendations & Timer */}
+            <div style={{ flex: 1.1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'center', background: 'rgba(255,255,255,0.04)', padding: '20px 24px', borderRadius: 'var(--border-radius-lg)', border: '0.5px solid rgba(255,255,255,0.1)', flex: 1 }}>
+                <div style={{ flexShrink: 0 }}>
+                  <Companion size="sm" mood="focused" wave={false} animate={false} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: '#F3EEFB', marginBottom: '6px' }}>Dein Companion empfiehlt:</p>
+                  <ul style={{ fontSize: '12px', color: '#B4A9C8', paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '5px', lineHeight: 1.4 }}>
+                    <li>Trinke einen Schluck Wasser 💧</li>
+                    <li>Lass die Schultern einmal locker fallen 🧘</li>
+                    <li>Richte den Blick für 20 Sekunden in die Ferne 👁️</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(127,119,221,0.05)', border: '0.5px solid rgba(127,119,221,0.3)', borderRadius: 'var(--border-radius-lg)', padding: '20px 28px', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                  <div style={{ background: 'rgba(127,119,221,0.1)', border: '1px solid #7F77DD', borderRadius: 'var(--border-radius-md)', padding: '10px 24px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '32px', fontWeight: 400, color: '#EEEDFE', fontFamily: 'monospace', letterSpacing: '1px', lineHeight: 1 }}>{fmt(timer)}</p>
+                    <p style={{ fontSize: '9px', color: '#AFA9EC', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mikropause</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 500, color: '#EEEDFE' }}>Pause läuft</p>
+                    <p style={{ fontSize: '11px', color: '#B4A9C8' }}>Nimm dir diese zwei Minuten für dich.</p>
+                  </div>
+                </div>
+                <button onClick={() => setActive(!active)} style={{ padding: '10px 18px', background: active ? '#D85A30' : '#7F77DD', border: 'none', borderRadius: 'var(--border-radius-md)', color: '#EEEDFE', fontSize: '12px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'background 0.2s' }}>
+                  <i className={`ti ${active ? 'ti-player-pause' : 'ti-player-play'}`} style={{ fontSize: '12px' }} />
+                  {active ? 'Pause halten' : 'Pause starten'}
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column: Aufgaben des Tages */}
+            <div style={{ flex: 0.9, background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 'var(--border-radius-lg)', padding: '20px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', borderBottom: '0.5px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
+                <i className="ti ti-calendar-event" style={{ fontSize: '16px', color: '#7F77DD' }} />
+                <p style={{ fontSize: '12px', fontWeight: 500, color: '#F3EEFB', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aufgaben des Tages</p>
+                <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.08)', color: '#B4A9C8', padding: '1px 6px', borderRadius: '10px', fontWeight: 500, marginLeft: 'auto' }}>
+                  {todayTasks.length}
+                </span>
+              </div>
+              
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                {todayTasks.map(task => (
+                  <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', border: '0.5px solid rgba(255,255,255,0.05)', borderRadius: 'var(--border-radius-md)', opacity: task.done ? 0.5 : 1 }}>
+                    <div style={{ width: '16px', height: '16px', borderRadius: '4px', border: `1.2px solid ${task.done ? '#1D9E75' : '#B4A9C8'}`, background: task.done ? '#1D9E75' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {task.done && <i className="ti ti-check" style={{ fontSize: '10px', color: 'white' }} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: '12px', color: '#EEEDFE', textDecoration: task.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 400 }}>{task.title}</p>
+                    </div>
+                    <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: task.priority === 'hoch' ? 'rgba(216,90,48,0.15)' : task.priority === 'mittel' ? 'rgba(186,117,23,0.15)' : 'rgba(15,110,86,0.15)', color: task.priority === 'hoch' ? '#FFA07A' : task.priority === 'mittel' ? '#F4C430' : '#8FDFB3', flexShrink: 0 }}>
+                      {task.priority === 'hoch' ? 'Hoch' : task.priority === 'mittel' ? 'Mittel' : 'Niedrig'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // INVISIBLE WORK WIDGET
+    // ─────────────────────────────────────────────
+    function InvisibleWorkWidget({ items, setScreen }) {
+      if (items.length === 0) return null;
+      return (
+        <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '16px 18px', border: '0.5px solid var(--color-border-secondary)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '11px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <i className="ti ti-sparkles" style={{ fontSize: '12px', marginRight: '5px', color: '#7F77DD' }} />Heute schon geleistet
+            </p>
+            <span style={{ fontSize: '11px', color: '#7F77DD', fontWeight: 500 }}>{items.length} Dinge</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {items.slice(-5).reverse().map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '7px 10px', background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-md)', animation: 'fadeIn 0.2s ease' }}>
+                <span style={{ fontSize: '14px', flexShrink: 0 }}>{item.emoji}</span>
+                <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', flex: 1 }}>{item.text}</p>
+                <span style={{ fontSize: '10px', color: 'var(--color-text-tertiary)', flexShrink: 0 }}>{item.time}</span>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => setScreen(SCREENS.REFLECTION)} style={{ marginTop: '10px', width: '100%', padding: '8px', background: 'transparent', border: '0.5px solid var(--color-border-secondary)', borderRadius: 'var(--border-radius-md)', fontSize: '11px', color: 'var(--color-text-tertiary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+            <i className="ti ti-notebook" style={{ fontSize: '12px', color: '#7F77DD' }} />Wochenreflexion öffnen
+          </button>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // REFLECTION SCREEN (WOCHENRÜCKBLICK & RETROSPEKTIVE)
+    // ─────────────────────────────────────────────────────────────
+    function ReflectionScreen({ goodMoments, setScreen, tasks, energy }) {
+      const [weekRating, setWeekRating] = useState(null);
+      const [helpedChips, setHelpedChips] = useState([]);
+      const [notHelpedChips, setNotHelpedChips] = useState([]);
+      const [notes, setNotes] = useState('');
+      const [saved, setSaved] = useState(false);
+
+      const ratingDetails = [
+        { emoji: '😭', label: 'Sehr anstrengend', val: 1 },
+        { emoji: '🙁', label: 'Schwierig', val: 2 },
+        { emoji: '😐', label: 'Okay', val: 3 },
+        { emoji: '🙂', label: 'Gut', val: 4 },
+        { emoji: '🤩', label: 'Fantastisch', val: 5 },
+      ];
+
+      const helpedOptions = [
+        { label: '👥 Body-Doubling', id: 'doubling' },
+        { label: '❄️ Freeze-Modus', id: 'freeze' },
+        { label: '🪜 Microsteps', id: 'micro' },
+        { label: '⏳ Mikropausen', id: 'pausen' },
+        { label: '📝 Eigene Aufgaben', id: 'tasks' },
+      ];
+
+      const notHelpedOptions = [
+        { label: '💬 Slack/Mail Overload', id: 'overload' },
+        { label: '💤 Müdigkeit', id: 'muedigkeit' },
+        { label: '📱 Ablenkung', id: 'ablenkung' },
+        { label: '❓ Unklare Prioritäten', id: 'prioritaeten' },
+      ];
+
+      const handleHelpedToggle = id => {
+        setHelpedChips(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+      };
+
+      const handleNotHelpedToggle = id => {
+        setNotHelpedChips(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+      };
+
+      const handleSave = () => {
+        setSaved(true);
+      };
+
+      // Mock calculation for weekly tasks stats based on current session
+      const completedToday = tasks.filter(t => t.done).length;
+      const totalToday = tasks.length;
+      const weeklyCompleted = completedToday + 14; 
+      const weeklyTotal = totalToday + 15;
+      const percentage = Math.round((weeklyCompleted / weeklyTotal) * 100);
+
+      const allMoments = [...GOOD_MOMENTS_SEED, ...goodMoments];
+
+      return (
+        <div style={{ padding: '24px', display: 'grid', gridTemplateColumns: '1fr 360px', gap: '24px', alignItems: 'start', maxWidth: '1100px', margin: '0 auto' }}>
+          
+          {/* Left Column: Retrospective Form */}
+          <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '24px', border: '0.5px solid var(--color-border-secondary)', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: 500, color: 'var(--color-text-primary)' }}>Wöchentliche Retrospektive</h2>
+              <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>Nimm dir 2 Minuten Zeit, um deine Woche zu reflektieren.</p>
+            </div>
+
+            {saved ? (
+              <div style={{ padding: '20px', background: '#E1F5EE', border: '0.5px solid #5DCAA580', borderRadius: 'var(--border-radius-lg)', textAlign: 'center', animation: 'fadeIn 0.3s ease' }}>
+                <i className="ti ti-circle-check" style={{ fontSize: '42px', color: '#1D9E75', marginBottom: '12px', display: 'block' }} />
+                <h3 style={{ fontSize: '16px', fontWeight: 500, color: '#085041', marginBottom: '8px' }}>Reflexion gespeichert!</h3>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', background: 'white', padding: '16px', borderRadius: 'var(--border-radius-md)', border: '0.5px solid #5DCAA540', textAlign: 'left', marginTop: '16px', marginBottom: '20px' }}>
+                  <Companion size="sm" mood="celebrating" wave={false} animate={true} />
+                  <p style={{ fontSize: '13px', color: '#0F6E56', lineHeight: 1.5 }}>
+                    <strong>Dein Companion sagt:</strong> "Großartige Reflexion, Alex. Jeder bewusste Rückblick stärkt dein Selbstbewusstsein und hilft dir, Muster zu erkennen."
+                  </p>
+                </div>
+                <button onClick={() => { setSaved(false); setWeekRating(null); setHelpedChips([]); setNotHelpedChips([]); setNotes(''); }} style={{ padding: '10px 18px', background: '#1D9E75', color: 'white', border: 'none', borderRadius: 'var(--border-radius-md)', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>
+                  Neue Reflexion starten
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Step 1: Mood rating */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)' }}>1. Wie fandest du deine Woche?</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                    {ratingDetails.map(r => {
+                      const isActive = weekRating === r.val;
+                      return (
+                        <button key={r.val} onClick={() => setWeekRating(r.val)} style={{ padding: '12px 6px', borderRadius: 'var(--border-radius-md)', border: `1.5px solid ${isActive ? '#7F77DD' : 'var(--color-border-tertiary)'}`, background: isActive ? '#EEEDFE' : 'var(--color-background-secondary)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', transition: 'all 0.15s' }}>
+                          <span style={{ fontSize: '24px' }}>{r.emoji}</span>
+                          <span style={{ fontSize: '9px', color: isActive ? '#534AB7' : 'var(--color-text-secondary)', textAlign: 'center', fontWeight: isActive ? 500 : 400 }}>{r.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Step 2: What helped */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)' }}>2. Was hat dir diese Woche geholfen?</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {helpedOptions.map(opt => {
+                      const isActive = helpedChips.includes(opt.id);
+                      return (
+                        <button key={opt.id} onClick={() => handleHelpedToggle(opt.id)} style={{ padding: '8px 14px', borderRadius: '20px', border: `0.5px solid ${isActive ? '#534AB7' : 'var(--color-border-secondary)'}`, background: isActive ? '#EEEDFE' : 'var(--color-background-primary)', color: isActive ? '#3C3489' : 'var(--color-text-secondary)', fontSize: '12px', fontWeight: isActive ? 500 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s' }}>
+                          {opt.label}
+                          {isActive && <i className="ti ti-check" style={{ fontSize: '12px' }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Step 3: What went wrong */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)' }}>3. Was lief schwierig oder hat nicht geholfen?</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {notHelpedOptions.map(opt => {
+                      const isActive = notHelpedChips.includes(opt.id);
+                      return (
+                        <button key={opt.id} onClick={() => handleNotHelpedToggle(opt.id)} style={{ padding: '8px 14px', borderRadius: '20px', border: `0.5px solid ${isActive ? '#993C1D' : 'var(--color-border-secondary)'}`, background: isActive ? '#FAECE7' : 'var(--color-background-primary)', color: isActive ? '#993C1D' : 'var(--color-text-secondary)', fontSize: '12px', fontWeight: isActive ? 500 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s' }}>
+                          {opt.label}
+                          {isActive && <i className="ti ti-check" style={{ fontSize: '12px' }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Step 4: Notes */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)' }}>4. Deine Erkenntnisse & Notizen</p>
+                  <textarea placeholder="Was nimmst du aus dieser Woche mit? Welche Anpassungen möchtest du für nächste Woche ausprobieren?" value={notes} onChange={e => setNotes(e.target.value)} style={{ width: '100%', minHeight: '100px', padding: '12px', border: '0.5px solid var(--color-border-secondary)', borderRadius: 'var(--border-radius-md)', fontFamily: 'inherit', fontSize: '13px', color: 'var(--color-text-primary)', outline: 'none', resize: 'vertical' }} />
+                </div>
+
+                <button onClick={handleSave} disabled={!weekRating} style={{ padding: '14px', background: weekRating ? '#7F77DD' : 'var(--color-border-tertiary)', color: weekRating ? 'white' : 'var(--color-text-tertiary)', border: 'none', borderRadius: 'var(--border-radius-lg)', fontSize: '14px', fontWeight: 500, cursor: weekRating ? 'pointer' : 'not-allowed', transition: 'all 0.2s', textAlign: 'center' }}>
+                  Reflexion speichern
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Right Column: Stats & Insights */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            
+            {/* Task completion card */}
+            <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '18px 20px', border: '0.5px solid var(--color-border-secondary)' }}>
+              <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px' }}>
+                <i className="ti ti-checkbox" style={{ fontSize: '12px', marginRight: '5px', color: '#1D9E75' }} />Aufgaben-Rückblick
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                <div>
+                  <p style={{ fontSize: '20px', fontWeight: 500, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>{weeklyCompleted} / {weeklyTotal}</p>
+                  <p style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '2px' }}>Wochenaufgaben erledigt</p>
+                </div>
+                <span style={{ fontSize: '24px', fontWeight: 400, color: '#1D9E75', lineHeight: 1 }}>{percentage}%</span>
+              </div>
+              <div style={{ height: '5px', background: 'var(--color-border-tertiary)', borderRadius: '2.5px' }}>
+                <div style={{ height: '100%', background: '#1D9E75', borderRadius: '2.5px', width: `${percentage}%`, transition: 'width 0.3s ease' }} />
+              </div>
+            </div>
+
+            {/* Energy profile card */}
+            <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '18px 20px', border: '0.5px solid var(--color-border-secondary)' }}>
+              <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px' }}>
+                <i className="ti ti-antenna" style={{ fontSize: '12px', marginRight: '5px', color: '#7F77DD' }} />Energie-Rückblick
+              </p>
+              <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginBottom: '12px', lineHeight: 1.4 }}>Deine Energieverteilung diese Woche (Mo-Fr):</p>
+              
+              {/* Segmented bar chart */}
+              <div style={{ display: 'flex', height: '10px', borderRadius: '5px', overflow: 'hidden', marginBottom: '14px' }}>
+                <div style={{ width: '50%', background: '#1D9E75' }} title="Hoch: 3 Tage (50%)" />
+                <div style={{ width: '33%', background: '#BA7517' }} title="Mittel: 2 Tage (33%)" />
+                <div style={{ width: '17%', background: '#D85A30' }} title="Niedrig: 1 Tag (17%)" />
+              </div>
+
+              {/* Legends */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {[
+                  { l: 'Hoch', d: '3 Tage (50%)', col: '#1D9E75', bg: '#E1F5EE' },
+                  { l: 'Mittel', d: '2 Tage (33%)', col: '#BA7517', bg: '#FAEEDA' },
+                  { l: 'Niedrig', d: '1 Tag (17%)', col: '#D85A30', bg: '#FAECE7' }
+                ].map((leg, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: leg.col }} />
+                      <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>{leg.l}</span>
+                    </div>
+                    <span style={{ color: 'var(--color-text-tertiary)' }}>{leg.d}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Old Good Moments Card (scrollable) */}
+            <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '18px 20px', border: '0.5px solid var(--color-border-secondary)', display: 'flex', flexDirection: 'column', maxHeight: '300px' }}>
+              <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', borderBottom: '0.5px solid var(--color-border-tertiary)', paddingBottom: '8px' }}>
+                <i className="ti ti-heart" style={{ fontSize: '12px', marginRight: '5px', color: '#7F77DD' }} />Gute Momente dieser Woche
+              </p>
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                {allMoments.slice().reverse().map((m, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '8px', padding: '8px 10px', background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-md)', fontSize: '11px' }}>
+                    <span style={{ fontSize: '16px', flexShrink: 0 }}>{m.emoji}</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>{m.text}</p>
+                      <p style={{ fontSize: '9px', color: 'var(--color-text-tertiary)', marginTop: '2px' }}>{m.date || 'Heute'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // THANK-YOU TOAST
+    // ─────────────────────────────────────────────
+    function ThankYouToast({ toast, onDismiss }) {
+      useEffect(() => {
+        if (!toast) return;
+        const t = setTimeout(onDismiss, 5500);
+        return () => clearTimeout(t);
+      }, [toast]);
+
+      if (!toast) return null;
+      return (
+        <div style={{
+          position: 'fixed', bottom: '28px', right: '28px', zIndex: 300,
+          background: 'var(--color-background-primary)',
+          border: '0.5px solid var(--color-border-secondary)',
+          borderRadius: 'var(--border-radius-lg)',
+          boxShadow: '0 8px 32px rgba(26,26,46,0.14)',
+          padding: '16px 18px',
+          maxWidth: '320px',
+          animation: 'fadeIn 0.3s ease',
+          display: 'flex', gap: '12px', alignItems: 'flex-start',
+        }}>
+          <div style={{
+            width: '38px', height: '38px', borderRadius: '11px',
+            background: toast.member.bg, color: toast.member.col,
+            fontSize: '13px', fontWeight: 500, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>{toast.member.init}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginBottom: '3px' }}>
+              <i className="ti ti-heart" style={{ fontSize: '11px', color: '#7F77DD', marginRight: '4px' }} />
+              {toast.member.name} hat sich bedankt
+            </p>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-primary)', lineHeight: 1.5 }}>{toast.message}</p>
+          </div>
+          <button onClick={onDismiss} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-tertiary)', padding: '2px', flexShrink: 0 }}>
+            <i className="ti ti-x" style={{ fontSize: '14px' }} />
+          </button>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // TEAM BOARD & BODY-DOUBLING
+    // ─────────────────────────────────────────────────────────────
+    function Team({
+      tasks, energy, alexStatus, setAlexStatus, doublingActive, setDoublingActive,
+      focusTime, setFocusTime, activeTask, setActiveTask, fmt, setScreen,
+      sessionMembers, setSessionMembers, pendingInvites, setPendingInvites, onInviteTeammate,
+      onOpenMicrosteps
+    }) {
+      const energyLabel = { niedrig: 'Niedrig', mittel: 'Mittel', hoch: 'Hoch' };
+      const energyCounts = TEAM.reduce((acc, m) => { acc[m.energy] = (acc[m.energy] || 0) + 1; return acc; }, {});
+
+      // Find the next important task (first undone today's task, sorted by energy match and priority)
+      const sortedTodayTasks = [...tasks]
+        .filter(t => !t.isIncoming && !t.done)
+        .sort((a, b) => {
+          const p = { hoch: 0, mittel: 1, niedrig: 2 };
+          const ma = a.eng === energy ? 0 : 1;
+          const mb = b.eng === energy ? 0 : 1;
+          if (ma !== mb) return ma - mb;
+          return p[a.priority] - p[b.priority];
+        });
+      const nextImportantTask = sortedTodayTasks[0];
+
+      const handleStartSession = (task) => {
+        setActiveTask(task);
+        setFocusTime(0);
+        setDoublingActive(true);
+      };
+
+      const handleStopSession = () => {
+        setDoublingActive(false);
+        setFocusTime(0);
+        setSessionMembers([]);
+        setPendingInvites([]);
+        setScreen(SCREENS.DASHBOARD);
+      };
+
+      return (
+        <div style={{
+          padding: '24px',
+          maxWidth: '760px',
+          margin: '0 auto',
+          animation: 'fadeIn 0.25s ease'
+        }}>
+          
+          {/* Centerpiece (Body-Doubling) */}
+          <div>
+            {doublingActive ? (
+              <>
+                {/* Active Session Card */}
+                <div style={{ background: '#EEEDFE', borderRadius: 'var(--border-radius-lg)', padding: '32px 28px', border: '0.5px solid #AFA9EC', textAlign: 'center', animation: 'fadeIn 0.3s ease', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div>
+                    <p style={{ fontSize: '11px', color: '#534AB7', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Live Session</p>
+                    <p style={{ fontSize: '64px', fontWeight: 400, color: '#3C3489', letterSpacing: '-2px', fontVariantNumeric: 'tabular-nums', lineHeight: 1, marginTop: '8px' }}>{fmt(focusTime)}</p>
+                    <p style={{ fontSize: '11px', color: '#7F77DD', marginTop: '4px' }}>Fokus-Zeit (Ziel: 45 min)</p>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '12px 18px', background: 'white', borderRadius: 'var(--border-radius-md)', border: '0.5px solid #AFA9EC80', maxWidth: '480px', margin: '0 auto', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                      <i className="ti ti-target" style={{ fontSize: '16px', color: '#534AB7', flexShrink: 0 }} />
+                      <p style={{ fontSize: '13px', color: '#3C3489', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {activeTask ? activeTask.title : 'Fokusaufgabe'}
+                      </p>
+                    </div>
+                    {activeTask && (
+                      <button onClick={() => onOpenMicrosteps(activeTask)} style={{ padding: '4px 8px', background: '#EEEDFE', border: '0.5px solid #AFA9EC', borderRadius: 'var(--border-radius-sm)', color: '#534AB7', fontSize: '11px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.15s', flexShrink: 0 }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(127,119,221,0.1)'} onMouseLeave={e => e.currentTarget.style.background = '#EEEDFE'} title="Microsteps öffnen">
+                        <i className="ti ti-stairs-up" style={{ fontSize: '12px' }} /> Microsteps
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Progress bar */}
+                  <div style={{ maxWidth: '480px', margin: '0 auto', width: '100%' }}>
+                    <div style={{ height: '5px', background: 'rgba(83,74,183,0.15)', borderRadius: '2.5px' }}>
+                      <div style={{ height: '100%', background: '#7F77DD', borderRadius: '2.5px', width: `${Math.min(parseFloat(((focusTime / (45 * 60)) * 100).toFixed(1)), 100)}%`, transition: 'width 1s linear' }} />
+                    </div>
+                    <p style={{ fontSize: '10px', color: '#AFA9EC', marginTop: '6px', textAlign: 'right' }}>
+                      {Math.min(Math.round((focusTime / (45 * 60)) * 100), 100)}% abgeschlossen
+                    </p>
+                  </div>
+
+                  {/* Session members */}
+                  <div style={{ borderTop: '0.5px solid #C0BCEC60', paddingTop: '18px', textAlign: 'left' }}>
+                    <p style={{ fontSize: '11px', fontWeight: 500, color: '#534AB7', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>Gemeinsam im Fokus</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      {/* Alex */}
+                      <div style={{ background: 'white', borderRadius: 'var(--border-radius-md)', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px', border: '0.5px solid #AFA9EC' }}>
+                        <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: '#7F77DD', color: '#EEEDFE', fontSize: '12px', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>A</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: '12px', fontWeight: 500, color: '#3C3489' }}>Alex (Du)</p>
+                          <p style={{ fontSize: '10px', color: '#7F77DD' }}>Fokus aktiv</p>
+                        </div>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#1D9E75', animation: 'pulse 2s infinite' }} />
+                      </div>
+                      {/* Active team members doing doubling */}
+                      {TEAM.filter(m => sessionMembers.includes(m.id)).map(m => (
+                        <div key={m.id} style={{ background: 'white', borderRadius: 'var(--border-radius-md)', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px', border: '0.5px solid var(--color-border-tertiary)' }}>
+                          <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: m.bg, color: m.col, fontSize: '12px', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{m.init}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-primary)' }}>{m.name}</p>
+                            <p style={{ fontSize: '10px', color: '#7F77DD' }}>Fokus aktiv</p>
+                          </div>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#1D9E75', animation: 'pulse 2s infinite' }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '10px' }}>
+                    <button onClick={handleStopSession} style={{ padding: '12px 24px', background: '#D85A30', color: 'white', border: 'none', borderRadius: 'var(--border-radius-md)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', transition: 'background 0.15s' }}>
+                      Session beenden
+                    </button>
+                  </div>
+                </div>
+
+                {/* Kollegen dazuholen Card */}
+                <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '20px 22px', border: '0.5px solid var(--color-border-secondary)', marginTop: '20px', textAlign: 'left', animation: 'fadeIn 0.35s ease' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px' }}>
+                    <i className="ti ti-plus" style={{ fontSize: '12px', marginRight: '5px', color: '#7F77DD' }} />Kollegen ins Body-Doubling einladen
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                    {TEAM.map(m => (
+                      <div key={m.id} style={{ background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-lg)', padding: '12px 14px', border: '0.5px solid var(--color-border-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: m.bg, color: m.col, fontSize: '11px', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative' }}>
+                            {m.init}
+                            <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '8px', height: '8px', borderRadius: '50%', background: '#5DCAA5', border: '1.5px solid var(--color-background-secondary)' }} />
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</p>
+                            <p style={{ fontSize: '10px', color: 'var(--color-text-tertiary)' }}>online</p>
+                          </div>
+                        </div>
+                        {/* Invite states */}
+                        {sessionMembers.includes(m.id) ? (
+                          <span style={{ fontSize: '11px', color: '#1D9E75', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '3px', marginRight: '4px' }}>
+                            <i className="ti ti-circle-check" /> Aktiv
+                          </span>
+                        ) : pendingInvites.includes(m.id) ? (
+                          <span style={{ fontSize: '11px', color: '#7F77DD', fontWeight: 500, animation: 'pulse 1.5s infinite', marginRight: '4px' }}>
+                            Warte...
+                          </span>
+                        ) : (
+                          <button onClick={() => onInviteTeammate(m.id)} style={{ padding: '6px 12px', background: '#EEEDFE', border: '0.5px solid #AFA9EC', borderRadius: 'var(--border-radius-md)', color: '#534AB7', fontSize: '10px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(127,119,221,0.1)'} onMouseLeave={e => e.currentTarget.style.background = '#EEEDFE'}>
+                            Body-Doubling anfragen
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Inactive / Start Session Card */
+              <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '24px', border: '0.5px solid var(--color-border-secondary)', display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.3s ease' }}>
+                <div style={{ textAlign: 'center', padding: '20px 0 10px' }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '1px solid #7F77DD40' }}>
+                    <i className="ti ti-users" style={{ fontSize: '26px', color: '#7F77DD' }} />
+                  </div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 500, color: 'var(--color-text-primary)' }}>Möchtest du eine Body-Doubling Session starten?</h3>
+                  <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginTop: '6px', maxWidth: '440px', margin: '6px auto 0', lineHeight: 1.5 }}>
+                    Beim Body-Doubling arbeiten du und dein Team parallel im Fokusmodus. Du kannst die Session für deine wichtigste priorisierte Aufgabe starten.
+                  </p>
+                </div>
+
+                <div style={{ borderTop: '0.5px solid var(--color-border-tertiary)', paddingTop: '18px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>Wichtigste priorisierte Aufgabe</p>
+                  
+                  {!nextImportantTask ? (
+                    <div style={{ padding: '16px', background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-md)', textAlign: 'center', color: 'var(--color-text-tertiary)', fontSize: '13px' }}>
+                      Keine offenen Aufgaben für heute. Erstelle eine Aufgabe auf dem Dashboard!
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'var(--color-background-secondary)', border: '0.5px solid var(--color-border-tertiary)', borderRadius: 'var(--border-radius-md)' }}>
+                      <div style={{ minWidth: 0, flex: 1, marginRight: '16px' }}>
+                        <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nextImportantTask.title}</p>
+                        <p style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginTop: '2px' }}>Priorität: {nextImportantTask.priority.toUpperCase()} · {nextImportantTask.deadline}</p>
+                      </div>
+                      <button onClick={() => handleStartSession(nextImportantTask)} style={{ padding: '8px 14px', background: '#7F77DD', color: 'white', border: 'none', borderRadius: 'var(--border-radius-md)', fontSize: '12px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.15s' }}>
+                        Fokus starten <i className="ti ti-arrow-right" style={{ fontSize: '12px' }} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // MID-DAY ENERGY CHECK MODAL
+    // ─────────────────────────────────────────────
+    function MidDayEnergyCheck({ currentEnergy, onSelect }) {
+      const energyLabel = { niedrig: 'Niedrig', mittel: 'Mittel', hoch: 'Hoch' };
+      return (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,26,46,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'var(--color-background-primary)', borderRadius: 'var(--border-radius-lg)', padding: '28px 26px', width: '400px', maxWidth: '94vw', border: '0.5px solid var(--color-border-secondary)', animation: 'fadeIn 0.2s ease' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+              <Companion size="sm" mood="celebrating" wave={false} animate={false} />
+            </div>
+            <p style={{ fontSize: '15px', color: 'var(--color-text-primary)', lineHeight: 1.65, marginBottom: '22px', textAlign: 'center' }}>
+              Du hast in 1,5 Stunden drei Aufgaben erledigt und eine Pause gemacht.{' '}
+              <span style={{ fontWeight: 500 }}>Gute Arbeit.</span>
+              <br />
+              Heute morgen war deine Energie{' '}
+              <span style={{ fontWeight: 500 }}>{energyLabel[currentEnergy] || currentEnergy}</span>.
+              <br />
+              Wie ist deine Energie jetzt?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[
+                { v: 'niedrig', l: 'Niedrig', icon: 'ti-battery-1', col: '#D85A30', bg: '#FAECE7', tc: '#993C1D' },
+                { v: 'mittel',  l: 'Mittel',  icon: 'ti-battery-3', col: '#BA7517', bg: '#FAEEDA', tc: '#854F0B' },
+                { v: 'hoch',    l: 'Hoch',    icon: 'ti-battery-4', col: '#0F6E56', bg: '#E1F5EE', tc: '#085041' },
+              ].map(e => (
+                <button key={e.v} onClick={() => onSelect(e.v)} style={{ padding: '12px 16px', borderRadius: 'var(--border-radius-md)', border: `0.5px solid ${e.col}50`, background: e.bg, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '13px', transition: 'all 0.15s' }}>
+                  <i className={`ti ${e.icon}`} style={{ fontSize: '22px', color: e.col }} />
+                  <span style={{ fontSize: '13px', color: e.tc, fontWeight: 500 }}>{e.l}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // APP ROOT
+    // ─────────────────────────────────────────────
+    function App() {
+      const [screen, setScreen] = useState(SCREENS.MORNING);
+      const [energy, setEnergy] = useState(null);
+      const [mood, setMood] = useState(null);
+      const [tasks, setTasks] = useState(TASKS);
+      const [bp, setBp] = useState(0);
+      const [alexStatus, setAlexStatus] = useState('fokus');
+      const [focusTime, setFocusTime] = useState(0);
+      const [activeTask, setActiveTask] = useState(null);
+      const [doublingActive, setDoublingActive] = useState(false);
+      const timerRef = useRef(null);
+      const breathRef = useRef(null);
+
+      const [sessionMembers, setSessionMembers] = useState([]);
+      const [pendingInvites, setPendingInvites] = useState([]);
+
+      const handleInviteTeammate = (id) => {
+        setPendingInvites(prev => [...prev, id]);
+        setTimeout(() => {
+          setPendingInvites(prev => prev.filter(x => x !== id));
+          setSessionMembers(prev => [...prev, id]);
+        }, 2000);
+      };
+
+      useEffect(() => {
+        if (screen === SCREENS.TEAM && !doublingActive) {
+          const sortedTasksList = sorted();
+          const nextImportant = sortedTasksList.find(t => !t.isIncoming && !t.done);
+          setActiveTask(nextImportant || null);
+          setFocusTime(0);
+          setDoublingActive(true);
+        }
+      }, [screen, doublingActive]);
+
+      useEffect(() => {
+        if (screen === SCREENS.FREEZE) {
+          breathRef.current = setInterval(() => setBp(p => (p + 1) % 4), 4000);
+          return () => clearInterval(breathRef.current);
+        }
+      }, [screen]);
+
+      useEffect(() => {
+        if (screen === SCREENS.TEAM && doublingActive) {
+          timerRef.current = setInterval(() => setFocusTime(t => t + 1), 1000);
+        } else {
+          clearInterval(timerRef.current);
+        }
+        return () => clearInterval(timerRef.current);
+      }, [screen, doublingActive]);
+
+      const [microstepProgress, setMicrostepProgress] = useState({});
+      const [selectedMicroTask, setSelectedMicroTask] = useState(null);
+      const [freezeCount, setFreezeCount] = useState(0);
+      const [invisibleWork, setInvisibleWork] = useState([]);
+      const [goodMoments, setGoodMoments] = useState([]);
+      const [thankYouToast, setThankYouToast] = useState(null);
+      const [simulated, setSimulated] = useState(false);
+      const [showMidDayCheck, setShowMidDayCheck] = useState(false);
+      const [midDayCheckShown, setMidDayCheckShown] = useState(false);
+      const [midDayConfirm, setMidDayConfirm] = useState(false);
+
+      const [isTodayTasksExpanded, setIsTodayTasksExpanded] = useState(false);
+      const [isIncomingTasksExpanded, setIsIncomingTasksExpanded] = useState(false);
+      const [incomingFilter, setIncomingFilter] = useState('all');
+
+      const addInvisibleWork = (emoji, text) => {
+        const now = new Date();
+        const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        setInvisibleWork(w => [...w, { emoji, text, time }]);
+      };
+
+      const addGoodMoment = (emoji, text, cat) => {
+        setGoodMoments(m => [...m, { id: Date.now(), emoji, text, cat, date: 'Heute' }]);
+      };
+
+      const addTask = (title) => {
+        if (!title.trim()) return;
+        const newTask = {
+          id: Date.now(),
+          title: title,
+          priority: 'mittel',
+          deadline: 'Heute',
+          eng: energy || 'mittel',
+          done: false,
+          isIncoming: false,
+          source: 'eigene',
+          dependsOn: null
+        };
+        setTasks(ts => [...ts, newTask]);
+        addInvisibleWork('📝', `Hinzugefügt: ${title.slice(0, 24)}…`);
+      };
+
+      const handleMidDayEnergySelect = (newEnergy) => {
+        setEnergy(newEnergy);
+        setShowMidDayCheck(false);
+        setMidDayCheckShown(true);
+        setMidDayConfirm(true);
+        setTimeout(() => setMidDayConfirm(false), 5000);
+      };
+
+      const triggerThankYou = (task) => {
+        if (!task.dependsOn) return;
+        const member = TEAM.find(m => m.id === task.dependsOn.id);
+        const message = THANK_YOU_MSGS[task.dependsOn.id];
+        if (member && message) {
+          setTimeout(() => setThankYouToast({ member, message }), 900);
+        }
+      };
+
+      const handleSimulate = () => {
+        setTasks(FRIDAY_TASKS);
+        setSimulated(true);
+        setMicrostepProgress({});
+        setInvisibleWork([]);
+      };
+
+      const completeMicrostep = (taskId, newCount) => {
+        setMicrostepProgress(p => ({ ...p, [taskId]: newCount }));
+        const task = tasks.find(t => t.id === taskId);
+        addInvisibleWork('🪜', `Schritt ${newCount}/5: ${task?.title?.slice(0, 28)}…`);
+        if (newCount === 5) {
+          setTasks(ts => ts.map(t => t.id === taskId ? { ...t, done: true } : t));
+          addGoodMoment('✅', `${task?.title} vollständig abgeschlossen`, 'Aufgabe');
+          addInvisibleWork('🎯', `Aufgabe komplett: ${task?.title?.slice(0, 28)}`);
+          if (task) triggerThankYou(task);
+          const newDoneCount = tasks.filter(t => t.done).length + 1;
+          if (newDoneCount === 3 && !midDayCheckShown) {
+            setTimeout(() => setShowMidDayCheck(true), 800);
+          }
+          if (activeTask && activeTask.id === taskId) {
+            const remainingUndoneTasks = tasks
+              .filter(t => t.id !== taskId)
+              .filter(t => !t.isIncoming && !t.done)
+              .sort((a, b) => {
+                const p = { hoch: 0, mittel: 1, niedrig: 2 };
+                const ma = a.eng === energy ? 0 : 1;
+                const mb = b.eng === energy ? 0 : 1;
+                if (ma !== mb) return ma - mb;
+                return p[a.priority] - p[b.priority];
+              });
+            const nextImportant = remainingUndoneTasks[0] || null;
+            setActiveTask(nextImportant);
+          }
+        }
+      };
+
+      const sorted = () => {
+        const p = { hoch: 0, mittel: 1, niedrig: 2 };
+        return [...tasks].sort((a, b) => {
+          const ma = a.eng === energy ? 0 : 1;
+          const mb = b.eng === energy ? 0 : 1;
+          if (ma !== mb) return ma - mb;
+          return p[a.priority] - p[b.priority];
+        });
+      };
+
+      const fmt = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+      const toggle = id => {
+        const task = tasks.find(t => t.id === id);
+        const willDone = !task?.done;
+        setTasks(ts => ts.map(t => t.id === id ? { ...t, done: !t.done } : t));
+        if (willDone && task) {
+          addInvisibleWork('✅', `Abgehakt: ${task.title.slice(0, 32)}`);
+          addGoodMoment('✅', `${task.title} abgeschlossen`, 'Aufgabe');
+          triggerThankYou(task);
+          const newDoneCount = tasks.filter(t => t.done).length + 1;
+          if (newDoneCount === 3 && !midDayCheckShown) {
+            setTimeout(() => setShowMidDayCheck(true), 600);
+          }
+          if (activeTask && activeTask.id === id) {
+            const remainingUndoneTasks = tasks
+              .filter(t => t.id !== id)
+              .filter(t => !t.isIncoming && !t.done)
+              .sort((a, b) => {
+                const p = { hoch: 0, mittel: 1, niedrig: 2 };
+                const ma = a.eng === energy ? 0 : 1;
+                const mb = b.eng === energy ? 0 : 1;
+                if (ma !== mb) return ma - mb;
+                return p[a.priority] - p[b.priority];
+              });
+            const nextImportant = remainingUndoneTasks[0] || null;
+            setActiveTask(nextImportant);
+          }
+        }
+      };
+      const isExpanded = bp === 0 || bp === 1;
+      const bLabels = ['Einatmen', 'Halten', 'Ausatmen', 'Halten'];
+
+      const energyStyle = {
+        niedrig: { bg: '#FAECE7', tx: '#993C1D', dot: '#D85A30', icon: 'ti-battery-1' },
+        mittel: { bg: '#FAEEDA', tx: '#854F0B', dot: '#BA7517', icon: 'ti-battery-3' },
+        hoch: { bg: '#E1F5EE', tx: '#085041', dot: '#0F6E56', icon: 'ti-battery-4' },
+      };
+
+      // Freeze & Hyperfocus are full-screen, no sidebar/header
+      if (screen === SCREENS.FREEZE) {
+        return <FreezeScreen bp={bp} isExpanded={isExpanded} bLabels={bLabels} setScreen={setScreen} freezeCount={freezeCount} />;
+      }
+      if (screen === SCREENS.HYPERFOCUS) {
+        return <HyperfocusScreen tasks={tasks} setScreen={setScreen} />;
+      }
+
+      return (
+        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+          <Sidebar screen={screen} setScreen={setScreen} onFreezeClick={() => { setFreezeCount(c => c + 1); setScreen(SCREENS.FREEZE); }} onHyperfocusClick={() => setScreen(SCREENS.HYPERFOCUS)} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Header screen={screen} energy={energy} energyStyle={energyStyle} simulated={simulated} doublingActive={doublingActive} />
+            <div style={{ flex: 1, overflowY: 'auto', background: 'var(--color-background-tertiary)' }}>
+              <div key={screen} style={{ animation: 'fadeIn 0.25s ease', minHeight: '100%' }}>
+                {screen === SCREENS.MORNING && <Morning mood={mood} setMood={setMood} energy={energy} setEnergy={setEnergy} setScreen={setScreen} />}
+                {screen === SCREENS.DASHBOARD && <Dashboard sorted={sorted} tasks={tasks} toggle={toggle} energy={energy} energyStyle={energyStyle} setScreen={setScreen} setActiveTask={setActiveTask} microstepProgress={microstepProgress} onOpenMicrosteps={setSelectedMicroTask} invisibleWork={invisibleWork} simulated={simulated} onSimulate={handleSimulate} isTodayTasksExpanded={isTodayTasksExpanded} setIsTodayTasksExpanded={setIsTodayTasksExpanded} isIncomingTasksExpanded={isIncomingTasksExpanded} setIsIncomingTasksExpanded={setIsIncomingTasksExpanded} incomingFilter={incomingFilter} setIncomingFilter={setIncomingFilter} onAddTask={addTask} onStartDoubling={(task) => { setActiveTask(task); setFocusTime(0); setDoublingActive(true); setScreen(SCREENS.TEAM); }} />}
+                {screen === SCREENS.TEAM && <Team tasks={tasks} energy={energy} alexStatus={alexStatus} setAlexStatus={setAlexStatus} doublingActive={doublingActive} setDoublingActive={setDoublingActive} focusTime={focusTime} setFocusTime={setFocusTime} activeTask={activeTask} setActiveTask={setActiveTask} fmt={fmt} setScreen={setScreen} sessionMembers={sessionMembers} setSessionMembers={setSessionMembers} pendingInvites={pendingInvites} setPendingInvites={setPendingInvites} onInviteTeammate={handleInviteTeammate} onOpenMicrosteps={setSelectedMicroTask} />}
+                {screen === SCREENS.REFLECTION && <ReflectionScreen goodMoments={goodMoments} setScreen={setScreen} tasks={tasks} energy={energy} />}
+              </div>
+            </div>
+          </div>
+          {selectedMicroTask && (
+            <MicrostepModal
+              task={selectedMicroTask}
+              completed={microstepProgress[selectedMicroTask.id] || 0}
+              onComplete={completeMicrostep}
+              onClose={() => setSelectedMicroTask(null)}
+            />
+          )}
+          {showMidDayCheck && (
+            <MidDayEnergyCheck
+              currentEnergy={energy}
+              onSelect={handleMidDayEnergySelect}
+            />
+          )}
+          {midDayConfirm && (
+            <div style={{
+              position: 'fixed', bottom: '28px', left: '50%', transform: 'translateX(-50%)',
+              zIndex: 300,
+              background: '#EEEDFE',
+              border: '0.5px solid #AFA9EC',
+              borderRadius: 'var(--border-radius-lg)',
+              boxShadow: '0 8px 32px rgba(26,26,46,0.14)',
+              padding: '14px 20px',
+              display: 'flex', alignItems: 'center', gap: '11px',
+              animation: 'fadeIn 0.3s ease',
+              whiteSpace: 'nowrap',
+            }}>
+              <i className="ti ti-check" style={{ fontSize: '16px', color: '#534AB7', flexShrink: 0 }} />
+              <p style={{ fontSize: '13px', color: '#3C3489', fontWeight: 400 }}>
+                Alles klar, ich habe die restlichen Aufgaben entsprechend deines Energie Updates priorisiert.
+              </p>
+            </div>
+          )}
+          <ThankYouToast toast={thankYouToast} onDismiss={() => setThankYouToast(null)} />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+
+</html>
